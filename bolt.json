@@ -1,0 +1,32 @@
+{
+  "name": "SAP Visitor Management System",
+  "description": "Digital visitor check-in/out system with QR codes and admin dashboard",
+  "version": "1.0.0",
+  "type": "php",
+  "php": "8.2",
+  "build": {
+    "command": ""
+  },
+  "start": {
+    "command": "php -S 0.0.0.0:3000"
+  },
+  "env": {
+    "APP_ENV": "production",
+    "APP_DEBUG": "false",
+    "DB_HOST": "localhost",
+    "DB_PORT": "3306",
+    "DB_NAME": "visitor_system",
+    "DB_USER": "root",
+    "DB_PASS": "",
+    "SITE_URL": "https://$PROJECT_DOMAIN",
+    "BASE_URL": "https://$PROJECT_DOMAIN",
+    "ADMIN_USERNAME": "admin",
+    "ADMIN_PASSWORD": "admin123",
+    "MS_GRAPH_ENABLED": "false",
+    "EMAIL_ENABLED": "false"
+  },
+  "install": {
+    "apt": ["default-mysql-client"],
+    "php_extensions": ["pdo", "pdo_mysql", "mysqli", "mbstring", "gd"]
+  }
+}
