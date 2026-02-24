@@ -14,15 +14,23 @@ if (!isset($_SESSION['lang'])) {
     $_SESSION['lang'] = 'fr';
 }
 
-// Sample hosts data (in production, this would come from database)
-// This can be replaced with: $hosts = require 'includes/db.php';
-$hosts = [
-    ['id' => 1, 'name' => 'Jean Dupont', 'email' => 'jean.dupont@sap.com', 'department' => 'IT'],
-    ['id' => 2, 'name' => 'Marie Martin', 'email' => 'marie.martin@sap.com', 'department' => 'RH'],
-    ['id' => 3, 'name' => 'Pierre Bernard', 'email' => 'pierre.bernard@sap.com', 'department' => 'Finance'],
-    ['id' => 4, 'name' => 'Sophie Petit', 'email' => 'sophie.petit@sap.com', 'department' => 'Marketing'],
-    ['id' => 5, 'name' => 'Lucas Moreau', 'email' => 'lucas.moreau@sap.com', 'department' => 'Sales'],
-];
+// Load database connection
+require_once __DIR__ . '/includes/db.php';
+
+// Get hosts from database
+try {
+    $hosts = $db->fetchAll("SELECT id, name, email, department FROM hosts WHERE is_active = ? ORDER BY name ASC", [true]);
+} catch (Exception $e) {
+    error_log('Failed to load hosts: ' . $e->getMessage());
+    // Fallback to sample data
+    $hosts = [
+        ['id' => 1, 'name' => 'Jean Dupont', 'email' => 'jean.dupont@sap.com', 'department' => 'IT'],
+        ['id' => 2, 'name' => 'Marie Martin', 'email' => 'marie.martin@sap.com', 'department' => 'RH'],
+        ['id' => 3, 'name' => 'Pierre Bernard', 'email' => 'pierre.bernard@sap.com', 'department' => 'Finance'],
+        ['id' => 4, 'name' => 'Sophie Petit', 'email' => 'sophie.petit@sap.com', 'department' => 'Marketing'],
+        ['id' => 5, 'name' => 'Lucas Moreau', 'email' => 'lucas.moreau@sap.com', 'department' => 'Sales'],
+    ];
+}
 
 // Duration options
 $durations = [

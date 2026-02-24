@@ -8,6 +8,12 @@
 
 require_once __DIR__ . '/config.php';
 
+// Use Supabase database
+if (getenv('VITE_SUPABASE_URL') && getenv('VITE_SUPABASE_SUPABASE_ANON_KEY')) {
+    require_once __DIR__ . '/db-supabase.php';
+    return;
+}
+
 // Check if we should use SQLite (Bolt, Platform.sh, or local testing without MySQL)
 $useSQLite = false;
 
