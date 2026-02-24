@@ -1,5 +1,4 @@
 {
-  "maxOutputTokens": 64000,
   "permissions": {
     "allow": [
       "WebFetch(domain:github.com)",
@@ -11,7 +10,10 @@
       "Bash(sleep 1:*)",
       "Bash(head:*)",
       "Bash(sleep 2:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(/opt/homebrew/opt/php/bin/php:*)",
+      "Bash(brew list php)"
     ]
-  }
+  },
+  "maxOutputTokens": 64000
 }
