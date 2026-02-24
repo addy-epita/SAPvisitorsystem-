@@ -18,7 +18,9 @@
       "Bash(tail:*)",
       "Bash(docker-compose restart:*)",
       "Bash(docker exec:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(zip:*)",
+      "Bash(unzip:*)"
     ]
   },
   "maxOutputTokens": 64000
