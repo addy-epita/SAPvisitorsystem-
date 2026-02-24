@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+
+# Docker files
+Dockerfile
+docker-compose.yml
+docker-entrypoint.sh
+.dockerignore
+
+# Environment files
+.env
+.env.example
+
+# Documentation
+*.md
+!README.md
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and cache
+logs/*
+cache/*
+uploads/*
+!logs/.gitkeep
+!cache/.gitkeep
+!uploads/.gitkeep
+
+# Testing
+test.php
+phpunit.xml
+.phpunit.result.cache
+
+# Dependencies (if using composer in future)
+vendor/
+node_modules/

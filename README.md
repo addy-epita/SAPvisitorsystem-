@@ -12,7 +12,34 @@ A modern digital visitor check-in/check-out system to replace paper logbooks, fe
 - **Admin Dashboard**: Real-time view of who's on-site, exports, settings
 - **GDPR Compliant**: Minimal PII, data retention policies, audit logging
 
-## Quick Start
+## Quick Start (Docker - Recommended)
+
+The easiest way to run the application is with Docker:
+
+```bash
+# 1. Clone/navigate to the project
+cd SAPvisitorsystem
+
+# 2. Start the containers
+docker-compose up -d
+
+# 3. Access the application
+# Kiosk:     http://localhost:8000
+# Admin:     http://localhost:8000/admin/ (admin / admin123)
+# phpMyAdmin: http://localhost:8080
+```
+
+To stop:
+```bash
+docker-compose down
+```
+
+To view logs:
+```bash
+docker-compose logs -f app
+```
+
+## Manual Setup (Without Docker)
 
 ### 1. Database Setup
 
