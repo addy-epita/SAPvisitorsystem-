@@ -12,7 +12,13 @@
       "Bash(sleep 2:*)",
       "Bash(pkill:*)",
       "Bash(/opt/homebrew/opt/php/bin/php:*)",
-      "Bash(brew list php)"
+      "Bash(brew list php)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(tail:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(docker exec:*)",
+      "Bash(curl:*)"
     ]
   },
   "maxOutputTokens": 64000

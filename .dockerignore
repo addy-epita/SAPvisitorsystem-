@@ -5,8 +5,10 @@
 # Docker files
 Dockerfile
 docker-compose.yml
-docker-entrypoint.sh
 .dockerignore
+
+# Keep entrypoint script for build
+!docker-entrypoint.sh
 
 # Environment files
 .env

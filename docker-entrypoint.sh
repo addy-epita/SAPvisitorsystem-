@@ -13,11 +13,10 @@ mkdir -p /var/www/html/logs
 mkdir -p /var/www/html/uploads
 mkdir -p /var/www/html/cache
 
-# Set permissions
-chown -R www-data:www-data /var/www/html
-chmod -R 755 /var/www/html
+# Set permissions (avoid chown on bind-mounted volumes)
 chmod -R 777 /var/www/html/logs 2>/dev/null || true
 chmod -R 777 /var/www/html/uploads 2>/dev/null || true
+chmod -R 777 /var/www/html/cache 2>/dev/null || true
 
 # Create .env file from environment variables if it doesn't exist
 if [ ! -f /var/www/html/.env ]; then
@@ -73,7 +72,7 @@ max_retries=30
 retry_count=0
 
 while [ $retry_count -lt $max_retries ]; do
-    if mysqladmin ping -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" --silent 2>/dev/null; then
+    if mysqladmin ping -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" --skip-ssl --silent 2>/dev/null; then
         echo "Database is ready!"
         break
     fi
