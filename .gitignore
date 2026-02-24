@@ -1,0 +1,44 @@
+# Dependencies
+/vendor/
+node_modules/
+
+# Environment files
+.env
+.env.local
+
+# Database files (local development)
+/data/*.db
+/data/*.sqlite
+
+# Logs
+/logs/*.log
+/logs/*.txt
+
+# Cache
+/cache/*
+!cache/.gitkeep
+
+# Uploads
+/uploads/*
+!uploads/.gitkeep
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+mysql-data/
+
+# Claude worktrees
+.claude/worktrees/*/
+
+# Temporary files
+*.tmp
+*.temp
