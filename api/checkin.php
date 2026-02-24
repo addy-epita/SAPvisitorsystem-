@@ -5,17 +5,27 @@
  */
 
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 // Only accept POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonResponse(false, ['message' => 'Method not allowed'], 405);
 }
 
-// Get JSON input
-$input = json_decode(file_get_contents('php://input'), true);
+// Get input - support both JSON and form data
+$contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+$input = [];
 
-if (!$input) {
-    jsonResponse(false, ['message' => 'Invalid JSON input'], 400);
+if (strpos($contentType, 'application/json') !== false) {
+    // JSON input
+    $input = json_decode(file_get_contents('php://input'), true);
+} else {
+    // Form data input
+    $input = $_POST;
+}
+
+if (empty($input)) {
+    jsonResponse(false, ['message' => 'Invalid input data'], 400);
 }
 
 // Validate required fields
@@ -109,15 +119,34 @@ try {
     // Log the check-in
     logAudit('checkin', $visitorId, "Visitor checked in: $firstName $lastName from $company");
 
-    // Return success response
-    jsonResponse(true, [
-        'visitor_id' => $visitorId,
-        'qr_token' => $qrToken,
-        'qr_url' => $qrUrl,
-        'message' => 'Check-in successful'
-    ]);
+    // Check if request is from form or AJAX/API
+    $isFormRequest = strpos($contentType, 'application/json') === false;
+
+    if ($isFormRequest) {
+        // Redirect to confirmation page for form submissions
+        header("Location: ../confirmation.php?type=checkin&token=" . urlencode($qrToken));
+        exit;
+    } else {
+        // Return JSON response for API requests
+        jsonResponse(true, [
+            'visitor_id' => $visitorId,
+            'qr_token' => $qrToken,
+            'qr_url' => $qrUrl,
+            'message' => 'Check-in successful'
+        ]);
+    }
 
 } catch (Exception $e) {
     error_log("Check-in error: " . $e->getMessage());
-    jsonResponse(false, ['message' => 'Error processing check-in. Please try again.'], 500);
+
+    // Check if request is from form or AJAX/API
+    $isFormRequest = strpos($contentType, 'application/json') === false;
+
+    if ($isFormRequest) {
+        // Show error page for form submissions
+        header("Location: ../checkin.php?error=1&message=" . urlencode($e->getMessage()));
+        exit;
+    } else {
+        jsonResponse(false, ['message' => 'Error processing check-in. Please try again.'], 500);
+    }
 }

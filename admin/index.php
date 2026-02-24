@@ -30,13 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['admin_role'] = 'admin';
 
         // Log login
-        log_audit('admin_login', "User {$username} logged in", null, $_SERVER['REMOTE_ADDR']);
+        log_audit('admin_login', ['message' => "User {$username} logged in", 'ip' => $_SERVER['REMOTE_ADDR']]);
 
         header('Location: dashboard.php');
         exit;
     } else {
         $error = 'Identifiants invalides';
-        log_audit('admin_login_failed', "Failed login attempt for {$username}", null, $_SERVER['REMOTE_ADDR']);
+        log_audit('admin_login_failed', ['message' => "Failed login attempt for {$username}", 'ip' => $_SERVER['REMOTE_ADDR']]);
     }
 }
 ?>

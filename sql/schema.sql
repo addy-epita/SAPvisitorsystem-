@@ -153,6 +153,27 @@ CREATE TABLE `admin_users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Admin and supervisor user accounts';
 
 -- --------------------------------------------------------
+-- Table: action_tokens
+-- Secure tokens for email action links (host confirmations)
+-- --------------------------------------------------------
+DROP TABLE IF EXISTS `action_tokens`;
+CREATE TABLE `action_tokens` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `visitor_id` INT UNSIGNED NOT NULL,
+    `token` VARCHAR(64) UNIQUE NOT NULL,
+    `action_type` ENUM('confirm_present', 'confirm_departed', 'extend_visit') DEFAULT 'confirm_present',
+    `used_at` DATETIME DEFAULT NULL,
+    `expires_at` DATETIME NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX `idx_token` (`token`),
+    INDEX `idx_visitor_id` (`visitor_id`),
+    INDEX `idx_expires_at` (`expires_at`),
+    FOREIGN KEY (`visitor_id`) REFERENCES `visitors`(`id`) ON DELETE CASCADE
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Secure tokens for email action links';
+
+-- --------------------------------------------------------
 -- Table: data_retention_log
 -- Track GDPR data anonymization
 -- --------------------------------------------------------

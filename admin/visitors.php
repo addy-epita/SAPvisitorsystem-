@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout_visitor'])) 
         [$visitor_id]
     );
 
-    log_audit('manual_checkout', "Manual checkout for visitor ID {$visitor_id}", $visitor_id, $_SERVER['REMOTE_ADDR']);
+    log_audit('manual_checkout', ['message' => "Manual checkout for visitor ID {$visitor_id}", 'ip' => $_SERVER['REMOTE_ADDR']], $visitor_id);
 
     header('Location: visitors.php?view=' . $view);
     exit;

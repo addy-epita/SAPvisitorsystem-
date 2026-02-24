@@ -7,6 +7,7 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/email.php';
 
 // Check if running from CLI
@@ -15,7 +16,17 @@ if (php_sapi_name() !== 'cli') {
 }
 
 $db = new Database();
-$emailService = new EmailService();
+
+// Initialize email service with proper configuration
+$emailConfig = [
+    'tenant_id' => MS_GRAPH_TENANT_ID,
+    'client_id' => MS_GRAPH_CLIENT_ID,
+    'client_secret' => MS_GRAPH_CLIENT_SECRET,
+    'from_email' => MS_GRAPH_FROM_EMAIL,
+    'from_name' => MS_GRAPH_FROM_NAME
+];
+
+$emailService = new EmailService($db->getPdo(), $emailConfig, BASE_URL);
 
 $isEscalation = in_array('--escalation', $argv);
 
@@ -37,12 +48,12 @@ if ($isEscalation) {
         echo "No unconfirmed visitors found.\n";
     } else {
         // Get supervisor emails from settings
-        $supervisorEmails = explode(',', get_setting('supervisor_emails', ''));
+        $supervisorEmails = explode(',', get_setting('escalation_emails') ?: ESCALATION_EMAILS);
 
         if (empty($supervisorEmails[0])) {
             echo "No supervisor emails configured!\n";
         } else {
-            $sent = $emailService->sendEscalationNotification($supervisorEmails, $unconfirmed);
+            $sent = $emailService->sendEscalation($unconfirmed, $supervisorEmails);
             echo "Escalation email sent to " . count($supervisorEmails) . " supervisors\n";
 
             // Mark visitors as unconfirmed
@@ -78,7 +89,7 @@ if ($isEscalation) {
         foreach ($visitors as $visitor) {
             echo "Sending reminder for visitor {$visitor['id']} ({$intervalMinutes}min)\n";
 
-            $emailService->sendReminderNotification($visitor['host_email'], $visitor, $intervalMinutes);
+            $emailService->sendReminder($visitor, $intervalMinutes);
 
             // Log notification
             $db->execute(

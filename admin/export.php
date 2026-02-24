@@ -57,7 +57,7 @@ if (isset($_GET['export'])) {
     }
 
     fclose($output);
-    log_audit('export_csv', "Exported {$date_from} to {$date_to}", null, $_SERVER['REMOTE_ADDR']);
+    log_audit('export_csv', ['message' => "Exported {$date_from} to {$date_to}", 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit;
 }
 ?>

@@ -45,3 +45,89 @@ try {
     error_log('Failed to initialize database: ' . $e->getMessage());
     $db = null;
 }
+
+/**
+ * Database Class Wrapper
+ *
+ * Provides an object-oriented interface for database operations
+ * Compatible with admin panel and other components
+ */
+class Database {
+    private ?PDO $pdo = null;
+
+    public function __construct() {
+        $this->pdo = getDB();
+    }
+
+    /**
+     * Execute a query and return all results
+     */
+    public function fetchAll(string $sql, array $params = []): array {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Execute a query and return a single row
+     */
+    public function fetchOne(string $sql, array $params = []): ?array {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
+    /**
+     * Execute a query and return a single column value
+     */
+    public function fetchColumn(string $sql, array $params = [], int $column = 0): mixed {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchColumn($column);
+    }
+
+    /**
+     * Execute a statement (INSERT, UPDATE, DELETE)
+     */
+    public function execute(string $sql, array $params = []): int {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Get the last inserted ID
+     */
+    public function lastInsertId(): string {
+        return $this->pdo->lastInsertId();
+    }
+
+    /**
+     * Begin a transaction
+     */
+    public function beginTransaction(): bool {
+        return $this->pdo->beginTransaction();
+    }
+
+    /**
+     * Commit a transaction
+     */
+    public function commit(): bool {
+        return $this->pdo->commit();
+    }
+
+    /**
+     * Rollback a transaction
+     */
+    public function rollback(): bool {
+        return $this->pdo->rollBack();
+    }
+
+    /**
+     * Get the underlying PDO connection
+     */
+    public function getPdo(): PDO {
+        return $this->pdo;
+    }
+}

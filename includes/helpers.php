@@ -290,13 +290,13 @@ function get_setting(string $key, mixed $default = null): mixed {
     // Cache settings to avoid repeated queries
     if ($settings === null) {
         try {
-            $db = db();
-            $stmt = $db->query("SELECT setting_key, setting_value, setting_type FROM settings");
+            $db = getDB();
+            $stmt = $db->query("SELECT setting_key, setting_value FROM settings");
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             $settings = [];
             foreach ($rows as $row) {
-                $settings[$row['setting_key']] = self::cast_setting_value($row['setting_value'], $row['setting_type']);
+                $settings[$row['setting_key']] = $row['setting_value'];
             }
         } catch (PDOException $e) {
             error_log("Failed to load settings: " . $e->getMessage());
@@ -620,7 +620,7 @@ function log_message(string $message, string $level = 'info', array $context = [
  */
 function log_audit(string $action, array $details = [], ?int $visitorId = null): void {
     try {
-        $db = db();
+        $db = getDB();
         $stmt = $db->prepare("
             INSERT INTO audit_log (action, user_email, visitor_id, details, ip_address, user_agent)
             VALUES (:action, :user, :visitor_id, :details, :ip, :user_agent)
@@ -637,4 +637,38 @@ function log_audit(string $action, array $details = [], ?int $visitorId = null):
     } catch (PDOException $e) {
         error_log("Failed to write audit log: " . $e->getMessage());
     }
+}
+
+// --------------------------------------------------------
+// CamelCase Aliases for Backward Compatibility
+// --------------------------------------------------------
+
+/**
+ * Alias for sanitize_input()
+ */
+function sanitize(mixed $input, string $type = 'string'): mixed {
+    return sanitize_input($input, $type);
+}
+
+/**
+ * Alias for generate_qr_token()
+ */
+function generateQRToken(int $length = 32): string {
+    return generate_qr_token($length);
+}
+
+/**
+ * Alias for log_audit() with different parameter signature
+ */
+function logAudit(string $action, ?int $visitorId = null, string $details = ''): void {
+    $detailsArray = !empty($details) ? ['message' => $details] : [];
+    log_audit($action, $detailsArray, $visitorId);
+}
+
+/**
+ * Alias for json_response()
+ */
+function jsonResponse(bool $success, array $data, int $statusCode = 200): void {
+    $response = array_merge(['success' => $success], $data);
+    json_response($response, $statusCode);
 }

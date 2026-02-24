@@ -28,6 +28,7 @@ define('MS_GRAPH_FROM_NAME', $_ENV['MS_GRAPH_FROM_NAME'] ?? 'SAP Visitor System'
 
 // Application Settings
 define('BASE_URL', $_ENV['BASE_URL'] ?? 'https://visitors.yourdomain.com');
+define('SITE_URL', $_ENV['BASE_URL'] ?? 'https://visitors.yourdomain.com'); // Alias for compatibility
 define('SITE_NAME', $_ENV['SITE_NAME'] ?? 'SAP Office');
 define('TIMEZONE', $_ENV['TIMEZONE'] ?? 'Europe/Paris');
 
@@ -50,6 +51,10 @@ define('QR_CODE_MARGIN', 10);
 // GDPR Settings
 define('DATA_RETENTION_DAYS', 365);
 define('ANONYMIZE_AFTER_DAYS', 365);
+
+// Paths
+define('LOG_PATH', __DIR__ . '/../logs');
+define('UPLOAD_PATH', __DIR__ . '/../uploads');
 
 // Set timezone
 date_default_timezone_set(TIMEZONE);
