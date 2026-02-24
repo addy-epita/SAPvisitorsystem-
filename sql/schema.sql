@@ -10,23 +10,22 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- Stores all visitor check-in/check-out records
 -- --------------------------------------------------------
 DROP TABLE IF EXISTS `visitors`;
-
 CREATE TABLE `visitors` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `first_name` VARCHAR(100) NOT NULL COMMENT 'Visitor first name',
-    `last_name` VARCHAR(100) NOT NULL COMMENT 'Visitor last name',
-    `company` VARCHAR(150) DEFAULT NULL COMMENT 'Visitor company/organization',
-    `reason` TEXT COMMENT 'Purpose of visit',
-    `host_email` VARCHAR(255) NOT NULL COMMENT 'Host email address',
-    `host_name` VARCHAR(150) DEFAULT NULL COMMENT 'Host full name (cached)',
-    `visitor_email` VARCHAR(255) DEFAULT NULL COMMENT 'Visitor email (optional, GDPR)',
-    `arrival_time` DATETIME NOT NULL COMMENT 'Actual check-in timestamp',
-    `expected_duration` INT UNSIGNED DEFAULT 180 COMMENT 'Expected visit duration in minutes (default 3h)',
-    `departure_time` DATETIME DEFAULT NULL COMMENT 'Actual check-out timestamp',
-    `status` ENUM('checked_in', 'checked_out', 'unconfirmed', 'manual_close') DEFAULT 'checked_in' COMMENT 'Current visit status',
-    `checkin_method` ENUM('kiosk', 'qr_mobile') DEFAULT 'kiosk' COMMENT 'How visitor checked in',
-    `checkout_method` ENUM('qr_rescan', 'host_confirmed', 'manual_admin') DEFAULT NULL COMMENT 'How visitor checked out',
-    `qr_token` VARCHAR(64) UNIQUE DEFAULT NULL COMMENT 'Unique token for QR code checkout',
+    `first_name` VARCHAR(100) NOT NULL,
+    `last_name` VARCHAR(100) NOT NULL,
+    `company` VARCHAR(150) DEFAULT NULL,
+    `reason` TEXT DEFAULT NULL,
+    `host_email` VARCHAR(255) NOT NULL,
+    `host_name` VARCHAR(150) DEFAULT NULL,
+    `visitor_email` VARCHAR(255) DEFAULT NULL,
+    `arrival_time` DATETIME NOT NULL,
+    `expected_duration` INT UNSIGNED DEFAULT 180 COMMENT 'Duration in minutes (default 3 hours)',
+    `departure_time` DATETIME DEFAULT NULL,
+    `status` ENUM('checked_in', 'checked_out', 'unconfirmed', 'manual_close') DEFAULT 'checked_in',
+    `checkin_method` ENUM('kiosk', 'qr_mobile') DEFAULT 'kiosk',
+    `checkout_method` ENUM('qr_rescan', 'host_confirmed', 'manual_admin') DEFAULT NULL,
+    `qr_token` VARCHAR(64) UNIQUE DEFAULT NULL COMMENT 'Unique token for QR checkout',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -34,29 +33,24 @@ CREATE TABLE `visitors` (
     INDEX `idx_arrival_time` (`arrival_time`),
     INDEX `idx_status` (`status`),
     INDEX `idx_host_email` (`host_email`),
-    INDEX `idx_departure_time` (`departure_time`),
     INDEX `idx_qr_token` (`qr_token`),
+    INDEX `idx_departure_time` (`departure_time`),
     INDEX `idx_created_at` (`created_at`),
-
-    -- Composite indexes for dashboard queries
-    INDEX `idx_status_arrival` (`status`, `arrival_time`),
-    INDEX `idx_host_status` (`host_email`, `status`)
+    INDEX `idx_status_arrival` (`status`, `arrival_time`)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Visitor check-in/check-out records';
 
 -- --------------------------------------------------------
 -- Table: hosts
--- Managed list of authorized hosts (employees who can receive visitors)
+-- Managed list of employees who can receive visitors
 -- --------------------------------------------------------
 DROP TABLE IF EXISTS `hosts`;
-
 CREATE TABLE `hosts` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `email` VARCHAR(255) UNIQUE NOT NULL COMMENT 'Host email address (unique identifier)',
-    `name` VARCHAR(150) NOT NULL COMMENT 'Host full name',
-    `department` VARCHAR(100) DEFAULT NULL COMMENT 'Department/team',
-    `phone` VARCHAR(50) DEFAULT NULL COMMENT 'Optional phone number',
-    `is_active` BOOLEAN DEFAULT TRUE COMMENT 'Whether host can receive visitors',
+    `email` VARCHAR(255) UNIQUE NOT NULL,
+    `name` VARCHAR(150) NOT NULL,
+    `department` VARCHAR(100) DEFAULT NULL,
+    `is_active` BOOLEAN DEFAULT TRUE,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -64,73 +58,71 @@ CREATE TABLE `hosts` (
     INDEX `idx_active` (`is_active`),
     INDEX `idx_department` (`department`)
 
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Authorized hosts who can receive visitors';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Employee hosts who can receive visitors';
 
 -- --------------------------------------------------------
 -- Table: notifications
--- Log of all email notifications sent
+-- Log of all notification emails sent
 -- --------------------------------------------------------
 DROP TABLE IF EXISTS `notifications`;
-
 CREATE TABLE `notifications` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `visitor_id` INT UNSIGNED NOT NULL COMMENT 'Related visitor record',
-    `type` ENUM('arrival', 'reminder', 'escalation', 'checkout', 'host_action') NOT NULL COMMENT 'Notification type',
-    `recipient_email` VARCHAR(255) NOT NULL COMMENT 'Email recipient',
-    `subject` VARCHAR(255) DEFAULT NULL COMMENT 'Email subject line',
-    `content` TEXT DEFAULT NULL COMMENT 'Email body (for audit/debug)',
-    `sent_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'When notification was sent',
-    `status` ENUM('sent', 'failed', 'pending', 'retrying') DEFAULT 'pending' COMMENT 'Delivery status',
-    `error_message` TEXT DEFAULT NULL COMMENT 'Error details if failed',
-    `retry_count` TINYINT UNSIGNED DEFAULT 0 COMMENT 'Number of retry attempts',
-    `message_id` VARCHAR(255) DEFAULT NULL COMMENT 'External message ID (Graph API)',
+    `visitor_id` INT UNSIGNED NOT NULL,
+    `type` ENUM('arrival', 'reminder', 'escalation', 'checkout') NOT NULL,
+    `recipient_email` VARCHAR(255) NOT NULL,
+    `subject` VARCHAR(255) DEFAULT NULL,
+    `message_body` TEXT DEFAULT NULL,
+    `sent_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `status` ENUM('sent', 'failed', 'pending') DEFAULT 'pending',
+    `error_message` TEXT DEFAULT NULL,
+    `retry_count` TINYINT UNSIGNED DEFAULT 0,
 
     INDEX `idx_visitor_id` (`visitor_id`),
     INDEX `idx_type` (`type`),
-    INDEX `idx_status` (`status`),
     INDEX `idx_sent_at` (`sent_at`),
-    INDEX `idx_recipient` (`recipient_email`),
+    INDEX `idx_status` (`status`),
+    INDEX `idx_visitor_type` (`visitor_id`, `type`),
 
     FOREIGN KEY (`visitor_id`) REFERENCES `visitors`(`id`) ON DELETE CASCADE
 
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Notification log for audit and tracking';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Notification email log';
 
 -- --------------------------------------------------------
 -- Table: audit_log
--- Comprehensive audit trail for all system actions
+-- Security audit trail for all system actions
 -- --------------------------------------------------------
 DROP TABLE IF EXISTS `audit_log`;
-
 CREATE TABLE `audit_log` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `action` VARCHAR(100) NOT NULL COMMENT 'Action type (e.g., checkin, checkout, login)',
+    `action` VARCHAR(100) NOT NULL COMMENT 'Action performed (e.g., checkin, checkout, login)',
     `user_email` VARCHAR(255) DEFAULT NULL COMMENT 'Admin/supervisor who performed action',
-    `visitor_id` INT UNSIGNED DEFAULT NULL COMMENT 'Related visitor if applicable',
-    `details` JSON DEFAULT NULL COMMENT 'Structured action details',
-    `ip_address` VARCHAR(45) DEFAULT NULL COMMENT 'Client IP address (IPv6 compatible)',
-    `user_agent` VARCHAR(255) DEFAULT NULL COMMENT 'Client user agent string',
+    `visitor_id` INT UNSIGNED DEFAULT NULL,
+    `details` TEXT DEFAULT NULL COMMENT 'JSON or text details of the action',
+    `ip_address` VARCHAR(45) DEFAULT NULL COMMENT 'IPv4 or IPv6 address',
+    `user_agent` VARCHAR(255) DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     INDEX `idx_action` (`action`),
     INDEX `idx_user_email` (`user_email`),
     INDEX `idx_visitor_id` (`visitor_id`),
     INDEX `idx_created_at` (`created_at`),
-    INDEX `idx_ip_address` (`ip_address`)
+    INDEX `idx_ip_address` (`ip_address`),
+    INDEX `idx_action_created` (`action`, `created_at`)
 
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Audit trail for compliance and security';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Security audit log';
 
 -- --------------------------------------------------------
 -- Table: settings
--- System configuration key-value store
+-- System configuration settings
 -- --------------------------------------------------------
 DROP TABLE IF EXISTS `settings`;
-
 CREATE TABLE `settings` (
-    `setting_key` VARCHAR(100) PRIMARY KEY COMMENT 'Unique setting identifier',
-    `setting_value` TEXT COMMENT 'Setting value (JSON for complex values)',
-    `description` VARCHAR(255) DEFAULT NULL COMMENT 'Human-readable description',
-    `is_json` BOOLEAN DEFAULT FALSE COMMENT 'Whether value should be parsed as JSON',
+    `setting_key` VARCHAR(100) PRIMARY KEY,
+    `setting_value` TEXT DEFAULT NULL,
+    `setting_type` ENUM('string', 'integer', 'boolean', 'json', 'array') DEFAULT 'string',
+    `description` VARCHAR(255) DEFAULT NULL,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `updated_by` VARCHAR(255) DEFAULT NULL,
 
     INDEX `idx_key` (`setting_key`)
 
@@ -138,19 +130,19 @@ CREATE TABLE `settings` (
 
 -- --------------------------------------------------------
 -- Table: admin_users
--- Local admin accounts (for non-SSO access)
+-- Admin and supervisor user accounts
 -- --------------------------------------------------------
 DROP TABLE IF EXISTS `admin_users`;
-
 CREATE TABLE `admin_users` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `email` VARCHAR(255) UNIQUE NOT NULL COMMENT 'Admin email address',
-    `name` VARCHAR(150) NOT NULL COMMENT 'Admin full name',
-    `password_hash` VARCHAR(255) DEFAULT NULL COMMENT 'BCrypt password hash (NULL for SSO-only)',
-    `role` ENUM('admin', 'supervisor', 'viewer') DEFAULT 'viewer' COMMENT 'Access level',
-    `is_active` BOOLEAN DEFAULT TRUE COMMENT 'Whether account is enabled',
-    `last_login` DATETIME DEFAULT NULL COMMENT 'Last successful login timestamp',
-    `last_login_ip` VARCHAR(45) DEFAULT NULL COMMENT 'IP of last login',
+    `email` VARCHAR(255) UNIQUE NOT NULL,
+    `name` VARCHAR(150) NOT NULL,
+    `role` ENUM('admin', 'supervisor', 'viewer') DEFAULT 'viewer',
+    `password_hash` VARCHAR(255) DEFAULT NULL COMMENT 'Null for SSO-only users',
+    `sso_enabled` BOOLEAN DEFAULT TRUE,
+    `last_login` DATETIME DEFAULT NULL,
+    `login_count` INT UNSIGNED DEFAULT 0,
+    `is_active` BOOLEAN DEFAULT TRUE,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -158,142 +150,94 @@ CREATE TABLE `admin_users` (
     INDEX `idx_role` (`role`),
     INDEX `idx_active` (`is_active`)
 
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Administrative user accounts';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Admin and supervisor user accounts';
 
 -- --------------------------------------------------------
--- Table: qr_sessions
--- Tracks QR code generation and usage for security
+-- Table: data_retention_log
+-- Track GDPR data anonymization
 -- --------------------------------------------------------
-DROP TABLE IF EXISTS `qr_sessions`;
-
-CREATE TABLE `qr_sessions` (
+DROP TABLE IF EXISTS `data_retention_log`;
+CREATE TABLE `data_retention_log` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `visitor_id` INT UNSIGNED NOT NULL COMMENT 'Related visitor',
-    `qr_token` VARCHAR(64) NOT NULL COMMENT 'QR token value',
-    `generated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'When QR was generated',
-    `expires_at` DATETIME NOT NULL COMMENT 'QR code expiration',
-    `used_at` DATETIME DEFAULT NULL COMMENT 'When QR was scanned for checkout',
-    `used_from_ip` VARCHAR(45) DEFAULT NULL COMMENT 'IP that used the QR',
-    `is_revoked` BOOLEAN DEFAULT FALSE COMMENT 'Whether QR was manually revoked',
+    `visitor_id` INT UNSIGNED NOT NULL,
+    `anonymized_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `records_affected` INT UNSIGNED DEFAULT 0,
+    `details` TEXT DEFAULT NULL,
 
     INDEX `idx_visitor_id` (`visitor_id`),
-    INDEX `idx_qr_token` (`qr_token`),
-    INDEX `idx_expires_at` (`expires_at`),
+    INDEX `idx_anonymized_at` (`anonymized_at`)
 
-    FOREIGN KEY (`visitor_id`) REFERENCES `visitors`(`id`) ON DELETE CASCADE
-
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='QR code session tracking';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='GDPR data retention anonymization log';
 
 -- --------------------------------------------------------
 -- Insert Default Settings
 -- --------------------------------------------------------
-
-INSERT INTO `settings` (`setting_key`, `setting_value`, `description`, `is_json`) VALUES
--- Timing and Intervals
-('reminder_intervals', '[120, 240, 360, 480]', 'Reminder intervals in minutes (2h, 4h, 6h, 8h)', TRUE),
-('default_duration', '180', 'Default visit duration in minutes (3 hours)', FALSE),
-('end_of_day_time', '18:00', 'End of business day (24h format)', FALSE),
-('qr_code_validity_hours', '24', 'How long QR codes remain valid', FALSE),
-
--- Data Retention and Privacy
-('data_retention_days', '365', 'Days to retain visitor data before anonymization', FALSE),
-('auto_anonymize', 'true', 'Automatically anonymize expired records', FALSE),
-('gdpr_mode', 'strict', 'GDPR compliance level (strict|relaxed)', FALSE),
-
--- Site Configuration
-('site_name', 'SAP Office', 'Site/location name displayed in UI', FALSE),
-('site_address', '', 'Physical address of the location', FALSE),
-('timezone', 'Europe/Paris', 'Default timezone for timestamps', FALSE),
-('locale', 'fr_FR', 'Default locale for formatting', FALSE),
-('evacuation_plan_url', '', 'URL to evacuation plan document', FALSE),
-
--- Email Configuration
-('email_from_name', 'SAP Visitor System', 'Sender name for emails', FALSE),
-('email_from_address', 'visitors@sap.example.com', 'Sender email address', FALSE),
-('email_reply_to', '', 'Reply-to address for emails', FALSE),
-('supervisor_emails', '[]', 'JSON array of supervisor emails for escalations', TRUE),
-('escalation_enabled', 'true', 'Enable end-of-day escalation emails', FALSE),
-
--- Kiosk Settings
-('kiosk_auto_redirect_seconds', '30', 'Seconds before kiosk returns to home screen', FALSE),
-('kiosk_language_default', 'fr', 'Default language (fr|en)', FALSE),
-('kiosk_show_company_field', 'true', 'Show company field in check-in form', FALSE),
-('kiosk_show_reason_field', 'true', 'Show visit reason field', FALSE),
-('kiosk_allow_manual_host', 'true', 'Allow entering host email not in directory', FALSE),
-
--- Security Settings
-('max_login_attempts', '5', 'Failed login attempts before lockout', FALSE),
-('login_lockout_minutes', '30', 'Minutes to lock account after max attempts', FALSE),
-('session_lifetime_hours', '8', 'Admin session lifetime', FALSE),
-('require_https', 'true', 'Require HTTPS for all requests', FALSE),
-('allowed_ip_ranges', '[]', 'JSON array of allowed IP ranges (empty = all)', TRUE),
-
--- Feature Flags
-('enable_email_notifications', 'true', 'Master switch for email notifications', FALSE),
-('enable_host_confirmations', 'true', 'Allow hosts to confirm visitor departure via email', FALSE),
-('enable_visitor_email', 'true', 'Allow visitors to provide email (optional)', FALSE),
-('enable_qr_checkout', 'true', 'Enable QR code checkout flow', FALSE),
-('enable_manual_checkout', 'true', 'Enable manual name-based checkout', FALSE),
-('maintenance_mode', 'false', 'Put system in maintenance mode', FALSE);
+INSERT INTO `settings` (`setting_key`, `setting_value`, `setting_type`, `description`) VALUES
+('reminder_intervals', '[120, 240, 360, 480]', 'json', 'Reminder intervals in minutes (2, 4, 6, 8 hours)'),
+('default_duration', '180', 'integer', 'Default visit duration in minutes (3 hours)'),
+('end_of_day_time', '18:00', 'string', 'End of business day time (24h format)'),
+('data_retention_days', '365', 'integer', 'Days to retain visitor data before anonymization'),
+('site_name', 'SAP Office', 'string', 'Site name displayed in emails and UI'),
+('evacuation_plan_url', '', 'string', 'URL to evacuation plan document'),
+('company_name', 'SAP', 'string', 'Company name for branding'),
+('timezone', 'Europe/Paris', 'string', 'System timezone'),
+('date_format', 'd/m/Y H:i', 'string', 'Date/time display format'),
+('language_default', 'fr', 'string', 'Default language (fr/en)'),
+('qr_code_expiry_hours', '24', 'integer', 'Hours until QR code expires'),
+('max_visit_duration_hours', '12', 'integer', 'Maximum allowed visit duration'),
+('enable_email_notifications', 'true', 'boolean', 'Enable/disable email notifications'),
+('escalation_recipients', '[]', 'json', 'List of supervisor emails for escalation'),
+('kiosk_auto_redirect_seconds', '60', 'integer', 'Seconds before kiosk returns to home screen'),
+('session_timeout_minutes', '30', 'integer', 'Admin session timeout in minutes'),
+('maintenance_mode', 'false', 'boolean', 'Enable maintenance mode'),
+('version', '1.0.0', 'string', 'Application version');
 
 -- --------------------------------------------------------
--- Insert Sample Hosts (for testing - remove in production)
+-- Insert Default Admin User (password: changeme)
+-- CHANGE THIS PASSWORD AFTER INSTALLATION
 -- --------------------------------------------------------
+INSERT INTO `admin_users` (`email`, `name`, `role`, `password_hash`, `sso_enabled`, `is_active`) VALUES
+('admin@example.com', 'System Administrator', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', FALSE, TRUE);
+-- Note: Default password is 'changeme' - MUST BE CHANGED AFTER INSTALLATION
 
--- Uncomment below to add sample hosts for testing
--- INSERT INTO `hosts` (`email`, `name`, `department`, `is_active`) VALUES
--- ('john.doe@sap.example.com', 'John Doe', 'IT Department', TRUE),
--- ('jane.smith@sap.example.com', 'Jane Smith', 'HR Department', TRUE),
--- ('manager@sap.example.com', 'Site Manager', 'Operations', TRUE);
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- --------------------------------------------------------
 -- Views for Common Queries
 -- --------------------------------------------------------
 
--- View: Currently checked-in visitors
-CREATE OR REPLACE VIEW `view_current_visitors` AS
+-- View: Current visitors on site
+DROP VIEW IF EXISTS `view_current_visitors`;
+CREATE VIEW `view_current_visitors` AS
 SELECT
     v.*,
-    TIMESTAMPDIFF(MINUTE, v.arrival_time, NOW()) as `duration_minutes`,
-    CASE
-        WHEN v.expected_duration > 0 THEN
-            ROUND((TIMESTAMPDIFF(MINUTE, v.arrival_time, NOW()) / v.expected_duration) * 100, 1)
-        ELSE 0
-    END as `duration_percentage`
+    TIMESTAMPDIFF(MINUTE, v.arrival_time, NOW()) as duration_minutes,
+    CONCAT(v.first_name, ' ', v.last_name) as full_name
 FROM `visitors` v
 WHERE v.status = 'checked_in'
-ORDER BY v.arrival_time ASC;
+ORDER BY v.arrival_time DESC;
 
--- View: Today's visits summary
-CREATE OR REPLACE VIEW `view_today_visits` AS
+-- View: Today's visits
+DROP VIEW IF EXISTS `view_today_visits`;
+CREATE VIEW `view_today_visits` AS
 SELECT
     v.*,
-    h.department as `host_department`
+    CONCAT(v.first_name, ' ', v.last_name) as full_name,
+    TIMESTAMPDIFF(MINUTE, v.arrival_time, COALESCE(v.departure_time, NOW())) as actual_duration_minutes
 FROM `visitors` v
-LEFT JOIN `hosts` h ON v.host_email = h.email
 WHERE DATE(v.arrival_time) = CURDATE()
 ORDER BY v.arrival_time DESC;
 
--- View: Visitor statistics by day
-CREATE OR REPLACE VIEW `view_daily_stats` AS
+-- View: Visitor statistics by host
+DROP VIEW IF EXISTS `view_host_statistics`;
+CREATE VIEW `view_host_statistics` AS
 SELECT
-    DATE(arrival_time) as `date`,
-    COUNT(*) as `total_visits`,
-    COUNT(DISTINCT host_email) as `unique_hosts`,
-    COUNT(DISTINCT company) as `unique_companies`,
-    AVG(TIMESTAMPDIFF(MINUTE, arrival_time, COALESCE(departure_time, NOW()))) as `avg_duration_minutes`,
-    SUM(CASE WHEN status = 'checked_in' THEN 1 ELSE 0 END) as `still_checked_in`
-FROM `visitors`
-GROUP BY DATE(arrival_time)
-ORDER BY `date` DESC;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
--- --------------------------------------------------------
--- Grant Permissions (adjust as needed for your setup)
--- --------------------------------------------------------
-
--- Example: Create application user (run as admin)
--- CREATE USER IF NOT EXISTS 'visitor_app'@'localhost' IDENTIFIED BY 'strong_random_password';
--- GRANT SELECT, INSERT, UPDATE, DELETE ON `visitor_management`.* TO 'visitor_app'@'localhost';
--- FLUSH PRIVILEGES;
+    v.host_email,
+    v.host_name,
+    COUNT(*) as total_visits,
+    SUM(CASE WHEN v.status = 'checked_in' THEN 1 ELSE 0 END) as active_visits,
+    AVG(TIMESTAMPDIFF(MINUTE, v.arrival_time, COALESCE(v.departure_time, NOW()))) as avg_duration_minutes,
+    MAX(v.arrival_time) as last_visit_date
+FROM `visitors` v
+WHERE v.arrival_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+GROUP BY v.host_email, v.host_name;

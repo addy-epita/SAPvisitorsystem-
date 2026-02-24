@@ -1,217 +1,211 @@
 # =============================================================================
 # SAP Visitor Management System - Apache Configuration
 # =============================================================================
-# Place this file in the web root directory
-# =============================================================================
 
 # -----------------------------------------------------------------------------
-# ENABLE REWRITE ENGINE
+# Enable Rewrite Engine
 # -----------------------------------------------------------------------------
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
 
     # -----------------------------------------------------------------------------
-    # SECURITY: BLOCK ACCESS TO SENSITIVE FILES
+    # Security: Block access to sensitive files
     # -----------------------------------------------------------------------------
-    # Block access to hidden files (starting with .)
-    RewriteRule (^|/)\. - [F,L]
-
-    # Block access to sensitive directories
-    RewriteRule ^(sql|logs|cache|includes|templates|cron)/ - [F,L]
-
-    # Block access to sensitive file extensions
-    RewriteRule \.(sql|log|cache|env|ini|md|git|svn|htpasswd)$ - [F,L]
-
-    # Block access to composer files
-    RewriteRule ^(composer\.(json|lock)|package\.json|package-lock\.json)$ - [F,L]
-
-    # -----------------------------------------------------------------------------
-    # PHP SETTINGS (if mod_php or php_value allowed)
-    # -----------------------------------------------------------------------------
-    <IfModule mod_php.c>
-        # Security settings
-        php_value session.cookie_httponly 1
-        php_value session.cookie_secure 1
-        php_value session.use_strict_mode 1
-        php_value session.gc_maxlifetime 28800
-
-        # Upload limits
-        php_value upload_max_filesize 10M
-        php_value post_max_size 10M
-        php_value max_execution_time 300
-        php_value max_input_time 300
-        php_value memory_limit 256M
-
-        # Error handling
-        php_flag display_errors off
-        php_value log_errors 1
-        php_value error_log logs/php_errors.log
-
-        # Disable dangerous functions
-        php_value disable_functions "exec,passthru,shell_exec,system,proc_open,popen,curl_exec,curl_multi_exec,parse_ini_file,show_source"
-    </IfModule>
+    RewriteRule ^\.env - [F,L]
+    RewriteRule ^\.git - [F,L]
+    RewriteRule ^\.gitignore - [F,L]
+    RewriteRule ^\.gitattributes - [F,L]
+    RewriteRule ^composer\.(json|lock)$ - [F,L]
+    RewriteRule ^package\.json$ - [F,L]
+    RewriteRule ^node_modules/ - [F,L]
+    RewriteRule ^vendor/ - [F,L]
+    RewriteRule ^sql/ - [F,L]
+    RewriteRule ^logs/ - [F,L]
+    RewriteRule ^includes/config\.php$ - [F,L]
 
     # -----------------------------------------------------------------------------
-    # URL REWRITING
+    # Redirect HTTP to HTTPS (uncomment in production)
     # -----------------------------------------------------------------------------
-    # API endpoints -> api/
-    RewriteRule ^api/([^/]+)/?$ api/$1.php [L,QSA]
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
 
-    # Admin panel -> admin/
-    RewriteRule ^admin/?$ admin/index.php [L,QSA]
-    RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L,QSA]
-
-    # Remove trailing slashes (SEO)
+    # -----------------------------------------------------------------------------
+    # Remove trailing slashes
+    # -----------------------------------------------------------------------------
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)/$ /$1 [L,R=301]
+    RewriteRule ^(.*)/$ /$1 [R=301,L]
 
-    # Main pages
-    RewriteRule ^checkin$ checkin.php [L,QSA]
-    RewriteRule ^checkout$ checkout.php [L,QSA]
-    RewriteRule ^confirmation$ confirmation.php [L,QSA]
-    RewriteRule ^host-action$ host-action.php [L,QSA]
+    # -----------------------------------------------------------------------------
+    # API Routes
+    # -----------------------------------------------------------------------------
+    RewriteRule ^api/checkin$ api/checkin.php [L]
+    RewriteRule ^api/checkout$ api/checkout.php [L]
+    RewriteRule ^api/verify-qr$ api/verify-qr.php [L]
+    RewriteRule ^api/notify$ api/notify.php [L]
+    RewriteRule ^api/hosts$ api/hosts.php [L]
+    RewriteRule ^api/visitors$ api/visitors.php [L]
 
-    # QR code verification
-    RewriteRule ^qr/([a-zA-Z0-9]+)$ checkout.php?token=$1 [L,QSA]
+    # -----------------------------------------------------------------------------
+    # Admin Routes
+    # -----------------------------------------------------------------------------
+    RewriteRule ^admin$ admin/index.php [L]
+    RewriteRule ^admin/dashboard$ admin/dashboard.php [L]
+    RewriteRule ^admin/visitors$ admin/visitors.php [L]
+    RewriteRule ^admin/visitors/([0-9]+)$ admin/visitors.php?id=$1 [L]
+    RewriteRule ^admin/hosts$ admin/hosts.php [L]
+    RewriteRule ^admin/export$ admin/export.php [L]
+    RewriteRule ^admin/settings$ admin/settings.php [L]
+    RewriteRule ^admin/audit$ admin/audit.php [L]
+    RewriteRule ^admin/logout$ admin/logout.php [L]
 
+    # -----------------------------------------------------------------------------
+    # Main Application Routes
+    # -----------------------------------------------------------------------------
+    RewriteRule ^checkin$ checkin.php [L]
+    RewriteRule ^checkout$ checkout.php [L]
+    RewriteRule ^confirmation$ confirmation.php [L]
+    RewriteRule ^qr$ qr.php [L]
+    RewriteRule ^host-action$ host-action.php [L]
+
+    # -----------------------------------------------------------------------------
+    # If file/directory doesn't exist, route to index.php
+    # -----------------------------------------------------------------------------
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
 </IfModule>
 
 # -----------------------------------------------------------------------------
-# SECURITY HEADERS
+# PHP Settings
+# -----------------------------------------------------------------------------
+<IfModule mod_php.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 256M
+    php_value session.gc_maxlifetime 1800
+    php_value session.cookie_httponly 1
+    php_value session.cookie_secure 1
+    php_value session.use_strict_mode 1
+</IfModule>
+
+# For PHP-FPM
+<IfModule mod_proxy_fcgi.c>
+    <IfModule mod_setenvif.c>
+        SetEnvIfNoCase ^Authorization$ "(.+)" HTTP_AUTHORIZATION=$1
+    </IfModule>
+</IfModule>
+
+# -----------------------------------------------------------------------------
+# Security Headers
 # -----------------------------------------------------------------------------
 <IfModule mod_headers.c>
-    # Content Security Policy
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
-
     # Prevent MIME type sniffing
     Header always set X-Content-Type-Options "nosniff"
 
-    # XSS Protection
+    # Enable XSS protection
     Header always set X-XSS-Protection "1; mode=block"
 
-    # Clickjacking protection
-    Header always set X-Frame-Options "DENY"
+    # Prevent clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
 
-    # Referrer policy
+    # Content Security Policy
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+
+    # Referrer Policy
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
 
-    # Permissions policy
-    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
-
-    # HSTS (HTTPS Strict Transport Security) - Enable only when HTTPS is fully configured
-    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    # Permissions Policy
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
 
     # Remove server information
     Header always unset X-Powered-By
     Header always unset Server
+
+    # Strict Transport Security (uncomment for HTTPS)
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 </IfModule>
 
 # -----------------------------------------------------------------------------
-# CACHING AND COMPRESSION
+# Disable Server Signature
+# -----------------------------------------------------------------------------
+ServerSignature Off
+
+# -----------------------------------------------------------------------------
+# Disable Directory Browsing
+# -----------------------------------------------------------------------------
+Options -Indexes
+
+# -----------------------------------------------------------------------------
+# Default Character Set
+# -----------------------------------------------------------------------------
+AddDefaultCharset UTF-8
+
+# -----------------------------------------------------------------------------
+# Compression (if mod_deflate is available)
+# -----------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE application/rss+xml application/xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# -----------------------------------------------------------------------------
+# Browser Caching (if mod_expires is available)
 # -----------------------------------------------------------------------------
 <IfModule mod_expires.c>
     ExpiresActive On
 
     # Images
     ExpiresByType image/jpeg "access plus 1 year"
-    ExpiresByType image/gif "access plus 1 year"
     ExpiresByType image/png "access plus 1 year"
-    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
     ExpiresByType image/svg+xml "access plus 1 year"
-    ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
 
     # CSS and JavaScript
     ExpiresByType text/css "access plus 1 month"
     ExpiresByType application/javascript "access plus 1 month"
-    ExpiresByType text/javascript "access plus 1 month"
 
     # Fonts
     ExpiresByType font/woff2 "access plus 1 year"
     ExpiresByType application/font-woff2 "access plus 1 year"
-    ExpiresByType font/woff "access plus 1 year"
-    ExpiresByType application/font-woff "access plus 1 year"
-    ExpiresByType font/ttf "access plus 1 year"
-    ExpiresByType font/otf "access plus 1 year"
+    ExpiresByType application/x-font-woff "access plus 1 year"
 
-    # HTML and data
-    ExpiresByType text/html "access plus 0 seconds"
-    ExpiresByType application/json "access plus 0 seconds"
-</IfModule>
-
-<IfModule mod_deflate.c>
-    # Compress text, HTML, JavaScript, CSS, and XML
-    AddOutputFilterByType DEFLATE text/plain
-    AddOutputFilterByType DEFLATE text/html
-    AddOutputFilterByType DEFLATE text/xml
-    AddOutputFilterByType DEFLATE text/css
-    AddOutputFilterByType DEFLATE application/xml
-    AddOutputFilterByType DEFLATE application/xhtml+xml
-    AddOutputFilterByType DEFLATE application/rss+xml
-    AddOutputFilterByType DEFLATE application/javascript
-    AddOutputFilterByType DEFLATE application/x-javascript
-    AddOutputFilterByType DEFLATE application/json
-    AddOutputFilterByType DEFLATE font/woff2
-    AddOutputFilterByType DEFLATE font/woff
-
-    # Remove browser bugs
-    BrowserMatch ^Mozilla/4 gzip-only-text/html
-    BrowserMatch ^Mozilla/4\.0[678] no-gzip
-    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
-    Header append Vary User-Agent env=!dont-vary
+    # Default
+    ExpiresDefault "access plus 1 week"
 </IfModule>
 
 # -----------------------------------------------------------------------------
-# DIRECTORY INDEXING
+# File Protection
 # -----------------------------------------------------------------------------
-# Disable directory browsing
-Options -Indexes
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
 
-# Set default index file
-DirectoryIndex index.php index.html
+<FilesMatch "\.(sql|log|ini|sh|inc|bak|old|orig|save|swp)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
 
 # -----------------------------------------------------------------------------
-# CHARACTER ENCODING
+# Limit Request Methods
 # -----------------------------------------------------------------------------
-AddDefaultCharset UTF-8
-<IfModule mod_mime.c>
-    AddCharset UTF-8 .html .css .js .php .json .xml
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|OPTIONS|HEAD)
+    RewriteRule .* - [F]
 </IfModule>
 
 # -----------------------------------------------------------------------------
-# ERROR DOCUMENTS
+# Rate Limiting (requires mod_ratelimit)
 # -----------------------------------------------------------------------------
-ErrorDocument 400 /error.php?code=400
-ErrorDocument 401 /error.php?code=401
-ErrorDocument 403 /error.php?code=403
-ErrorDocument 404 /error.php?code=404
-ErrorDocument 405 /error.php?code=405
-ErrorDocument 500 /error.php?code=500
-ErrorDocument 502 /error.php?code=502
-ErrorDocument 503 /error.php?code=503
-
-# -----------------------------------------------------------------------------
-# RATE LIMITING (requires mod_evasive or mod_security)
-# -----------------------------------------------------------------------------
-# <IfModule mod_evasive.c>
-#     DOSHashTableSize 3097
-#     DOSPageCount 20
-#     DOSSiteCount 100
-#     DOSPageInterval 1
-#     DOSSiteInterval 1
-#     DOSBlockingPeriod 10
-# </IfModule>
-
-# -----------------------------------------------------------------------------
-# IP RESTRICTIONS (uncomment and modify as needed)
-# -----------------------------------------------------------------------------
-# <RequireAll>
-#     Require all granted
-#     # Deny specific IPs
-#     Require not ip 192.168.1.100
-#     # Allow only specific IPs for admin
-#     <RequireAny>
-#         Require ip 192.168.1
-#         Require ip 10.0.0
-#     </RequireAny>
-# </RequireAll>
+<IfModule mod_ratelimit.c>
+    <Location />
+        SetOutputFilter RATE_LIMIT
+        SetEnv rate-limit 400
+    </Location>
+</IfModule>

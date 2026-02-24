@@ -1,0 +1,565 @@
+/**
+ * SAP Visitor Management System - Kiosk Styles
+ * Custom CSS for touch-friendly kiosk interface
+ */
+
+/* ============================================
+   BASE STYLES & RESET
+   ============================================ */
+
+* {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+}
+
+/* ============================================
+   KIOSK-SPECIFIC STYLES
+   ============================================ */
+
+/* Large touch targets - minimum 48px */
+.touch-target {
+    min-height: 48px;
+    min-width: 48px;
+}
+
+/* Extra large touch targets for main actions */
+.touch-target-xl {
+    min-height: 80px;
+    min-width: 80px;
+}
+
+/* ============================================
+   TYPOGRAPHY - LARGE FOR KIOSK
+   ============================================ */
+
+.text-kiosk-display {
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.text-kiosk-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.text-kiosk-heading {
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.text-kiosk-body {
+    font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+    line-height: 1.5;
+}
+
+.text-kiosk-small {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    line-height: 1.4;
+}
+
+/* ============================================
+   FORM ELEMENTS - TOUCH OPTIMIZED
+   ============================================ */
+
+/* Large input fields */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+select,
+textarea {
+    font-size: 1.25rem !important;
+    min-height: 64px;
+    padding: 1rem 1.5rem;
+    border: 3px solid #d1d5db;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+select:focus,
+textarea:focus {
+    border-color: #008FD3;
+    box-shadow: 0 0 0 4px rgba(0, 143, 211, 0.2);
+    outline: none;
+}
+
+/* Large select dropdown */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.5rem;
+    padding-right: 3rem;
+}
+
+/* Large labels */
+label {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+/* ============================================
+   BUTTONS - LARGE & TOUCH-FRIENDLY
+   ============================================ */
+
+.btn-kiosk {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    min-height: 80px;
+    padding: 1.5rem 3rem;
+    border-radius: 16px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    gap: 1rem;
+}
+
+.btn-kiosk-primary {
+    background: linear-gradient(135deg, #008FD3 0%, #0070A8 100%);
+    color: white;
+    box-shadow: 0 4px 14px rgba(0, 143, 211, 0.4);
+}
+
+.btn-kiosk-primary:hover {
+    background: linear-gradient(135deg, #0070A8 0%, #005a85 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 143, 211, 0.5);
+}
+
+.btn-kiosk-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 143, 211, 0.4);
+}
+
+.btn-kiosk-secondary {
+    background: white;
+    color: #008FD3;
+    border: 3px solid #008FD3;
+}
+
+.btn-kiosk-secondary:hover {
+    background: #008FD3;
+    color: white;
+}
+
+.btn-kiosk-success {
+    background: linear-gradient(135deg, #107E3E 0%, #0d5f2e 100%);
+    color: white;
+    box-shadow: 0 4px 14px rgba(16, 126, 62, 0.4);
+}
+
+.btn-kiosk-success:hover {
+    background: linear-gradient(135deg, #0d5f2e 0%, #094020 100%);
+    transform: translateY(-2px);
+}
+
+.btn-kiosk-large {
+    min-height: 200px;
+    font-size: 2.5rem;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Touch feedback */
+.btn-kiosk::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+.btn-kiosk:active::after {
+    width: 200%;
+    height: 200%;
+}
+
+/* ============================================
+   TILES - MAIN NAVIGATION
+   ============================================ */
+
+.kiosk-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    border-radius: 24px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.kiosk-tile::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%);
+    pointer-events: none;
+}
+
+.kiosk-tile-arrival {
+    background: linear-gradient(135deg, #008FD3 0%, #0070A8 100%);
+    color: white;
+    box-shadow: 0 8px 32px rgba(0, 143, 211, 0.3);
+}
+
+.kiosk-tile-arrival:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 48px rgba(0, 143, 211, 0.4);
+}
+
+.kiosk-tile-departure {
+    background: linear-gradient(135deg, #107E3E 0%, #0d5f2e 100%);
+    color: white;
+    box-shadow: 0 8px 32px rgba(16, 126, 62, 0.3);
+}
+
+.kiosk-tile-departure:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 48px rgba(16, 126, 62, 0.4);
+}
+
+.kiosk-tile-icon {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 1.5rem;
+}
+
+.kiosk-tile-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.kiosk-tile-subtitle {
+    font-size: 1.5rem;
+    opacity: 0.9;
+}
+
+/* ============================================
+   FORM LAYOUT
+   ============================================ */
+
+.form-group {
+    margin-bottom: 2rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+/* ============================================
+   VALIDATION STATES
+   ============================================ */
+
+.input-valid {
+    border-color: #107E3E !important;
+    background-color: #f0fdf4;
+}
+
+.input-invalid {
+    border-color: #BB0000 !important;
+    background-color: #fef2f2;
+}
+
+.error-message {
+    color: #BB0000;
+    font-size: 1.125rem;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+.loading-spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.btn-loading {
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+/* ============================================
+   SUCCESS/ERROR MESSAGES
+   ============================================ */
+
+.alert {
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.alert-success {
+    background-color: #f0fdf4;
+    border: 2px solid #107E3E;
+    color: #107E3E;
+}
+
+.alert-error {
+    background-color: #fef2f2;
+    border: 2px solid #BB0000;
+    color: #BB0000;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .btn-kiosk-primary {
+        border: 3px solid white;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: 3px solid #008FD3;
+        outline-offset: 2px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Touch feedback for interactive elements */
+.touch-feedback {
+    position: relative;
+    overflow: hidden;
+}
+
+.touch-feedback::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.3s ease;
+    border-radius: 50%;
+}
+
+.touch-feedback:active::after {
+    transform: translate(-50%, -50%) scale(2);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+/* Tablet landscape */
+@media (max-width: 1024px) {
+    .kiosk-tile {
+        padding: 2rem;
+    }
+
+    .kiosk-tile-icon {
+        width: 80px;
+        height: 80px;
+    }
+
+    .kiosk-tile-title {
+        font-size: 2rem;
+    }
+
+    .btn-kiosk-large {
+        min-height: 150px;
+        font-size: 2rem;
+    }
+}
+
+/* Tablet portrait */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .kiosk-tile-icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .kiosk-tile-title {
+        font-size: 1.75rem;
+    }
+
+    .btn-kiosk {
+        min-height: 60px;
+        padding: 1rem 2rem;
+        font-size: 1.25rem;
+    }
+
+    .btn-kiosk-large {
+        min-height: 120px;
+        font-size: 1.5rem;
+    }
+}
+
+/* ============================================
+   FULLSCREEN MODE STYLES
+   ============================================ */
+
+:fullscreen {
+    background: #f5f5f5;
+}
+
+:-webkit-full-screen {
+    background: #f5f5f5;
+}
+
+:-moz-full-screen {
+    background: #f5f5f5;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.animate-pulse-slow {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   QR CODE DISPLAY
+   ============================================ */
+
+.qr-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+}
+
+.qr-code {
+    width: 300px;
+    height: 300px;
+}
+
+/* ============================================
+   VISITOR BADGE PREVIEW
+   ============================================ */
+
+.badge-preview {
+    background: white;
+    border: 2px solid #008FD3;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 400px;
+    margin: 0 auto;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.badge-header {
+    background: #008FD3;
+    color: white;
+    padding: 1rem;
+    margin: -2rem -2rem 1.5rem -2rem;
+    border-radius: 14px 14px 0 0;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.25rem;
+}

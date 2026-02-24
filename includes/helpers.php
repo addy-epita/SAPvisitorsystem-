@@ -1,234 +1,121 @@
 <?php
 /**
- * SAP Visitor Management System - Utility Functions
+ * SAP Visitor Management System - Helper Functions
  *
- * Collection of helper functions for sanitization, formatting,
- * token generation, and common operations.
+ * Utility functions used throughout the application.
  *
- * @package SAPVisitorSystem
- * @author SAP Visitor System
+ * @package SAP_Visitor_System
  * @version 1.0.0
  */
 
 require_once __DIR__ . '/config.php';
 
-// =============================================================================
-// INPUT SANITIZATION AND VALIDATION
-// =============================================================================
+// --------------------------------------------------------
+// Input Sanitization and Validation
+// --------------------------------------------------------
 
 /**
- * Sanitize input data to prevent XSS and injection attacks
+ * Sanitize user input to prevent XSS and injection attacks
  *
- * @param mixed $data Input data to sanitize
- * @param string $type Type of sanitization: 'string', 'email', 'int', 'float', 'url', 'html'
- * @return mixed Sanitized data
+ * @param mixed $input Input to sanitize
+ * @param string $type Type of sanitization: 'string', 'email', 'int', 'float', 'html', 'url'
+ * @return mixed Sanitized input
  */
-function sanitize_input(mixed $data, string $type = 'string'): mixed
-{
-    if ($data === null) {
+function sanitize_input(mixed $input, string $type = 'string'): mixed {
+    if ($input === null) {
         return null;
     }
 
+    if (is_array($input)) {
+        return array_map(fn($item) => sanitize_input($item, $type), $input);
+    }
+
     return match ($type) {
-        'string' => sanitize_string($data),
-        'email' => sanitize_email($data),
-        'int' => filter_var($data, FILTER_VALIDATE_INT),
-        'float' => filter_var($data, FILTER_VALIDATE_FLOAT),
-        'bool' => filter_var($data, FILTER_VALIDATE_BOOLEAN),
-        'url' => filter_var($data, FILTER_SANITIZE_URL),
-        'html' => sanitize_html($data),
-        'alpha' => preg_replace('/[^a-zA-Z]/', '', $data),
-        'alphanumeric' => preg_replace('/[^a-zA-Z0-9]/', '', $data),
-        'numeric' => preg_replace('/[^0-9]/', '', $data),
-        default => sanitize_string($data),
+        'string' => htmlspecialchars(trim((string)$input), ENT_QUOTES, 'UTF-8'),
+        'email' => filter_var(trim((string)$input), FILTER_SANITIZE_EMAIL),
+        'int' => filter_var($input, FILTER_VALIDATE_INT),
+        'float' => filter_var($input, FILTER_VALIDATE_FLOAT),
+        'bool' => filter_var($input, FILTER_VALIDATE_BOOLEAN),
+        'html' => strip_tags((string)$input, '<p><br><strong><em><ul><ol><li>'),
+        'url' => filter_var(trim((string)$input), FILTER_SANITIZE_URL),
+        'alpha' => preg_replace('/[^a-zA-Z\s]/', '', (string)$input),
+        'alphanumeric' => preg_replace('/[^a-zA-Z0-9\s]/', '', (string)$input),
+        'numeric' => preg_replace('/[^0-9]/', '', (string)$input),
+        default => htmlspecialchars(trim((string)$input), ENT_QUOTES, 'UTF-8')
     };
 }
 
 /**
- * Sanitize a string value
- *
- * @param string $string
- * @return string
- */
-function sanitize_string(string $string): string
-{
-    // Remove null bytes
-    $string = str_replace(chr(0), '', $string);
-    // Trim whitespace
-    $string = trim($string);
-    // Convert special characters to HTML entities
-    return htmlspecialchars($string, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-}
-
-/**
- * Sanitize email address
+ * Validate email address format
  *
  * @param string $email
- * @return string|null Sanitized email or null if invalid
+ * @return bool
  */
-function sanitize_email(string $email): ?string
-{
-    $email = trim(strtolower($email));
-    $email = filter_var($email, FILTER_SANITIZE_EMAIL);
-    return filter_var($email, FILTER_VALIDATE_EMAIL) ?: null;
+function is_valid_email(string $email): bool {
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
 
 /**
- * Sanitize HTML content (allows safe HTML)
+ * Validate that a string is not empty after trimming
  *
- * @param string $html
+ * @param string $string
+ * @return bool
+ */
+function is_not_empty(string $string): bool {
+    return strlen(trim($string)) > 0;
+}
+
+/**
+ * Validate date string format
+ *
+ * @param string $date
+ * @param string $format
+ * @return bool
+ */
+function is_valid_date(string $date, string $format = 'Y-m-d H:i:s'): bool {
+    $d = DateTime::createFromFormat($format, $date);
+    return $d && $d->format($format) === $date;
+}
+
+// --------------------------------------------------------
+// QR Code and Token Generation
+// --------------------------------------------------------
+
+/**
+ * Generate a unique QR token for visitor checkout
+ *
+ * @param int $length Token length (default 32)
  * @return string
+ * @throws Exception
  */
-function sanitize_html(string $html): string
-{
-    // Strip all tags by default (be strict)
-    // For allowed tags, use a library like HTMLPurifier
-    return strip_tags($html);
+function generate_qr_token(int $length = 32): string {
+    // Use cryptographically secure random bytes
+    $bytes = random_bytes($length);
+    // Convert to URL-safe base64
+    return rtrim(strtr(base64_encode($bytes), '+/', '-_'), '=');
 }
 
 /**
- * Validate and sanitize a name (first name, last name, company)
+ * Generate a random secure token
  *
- * @param string $name
- * @param int $maxLength Maximum length
- * @return string|null
+ * @param int $length
+ * @return string
+ * @throws Exception
  */
-function sanitize_name(string $name, int $maxLength = 150): ?string
-{
-    $name = trim($name);
-    // Remove control characters but allow letters, numbers, spaces, and common punctuation
-    $name = preg_replace('/[\x00-\x1F\x7F]/', '', $name);
-    // Limit length
-    if (strlen($name) > $maxLength) {
-        $name = substr($name, 0, $maxLength);
-    }
-    // Must contain at least one letter
-    if (!preg_match('/[\p{L}]/u', $name)) {
-        return null;
-    }
-    return sanitize_string($name);
-}
-
-/**
- * Validate a French phone number
- *
- * @param string $phone
- * @return string|null Normalized phone number or null if invalid
- */
-function validate_phone(string $phone): ?string
-{
-    // Remove all non-numeric characters
-    $digits = preg_replace('/[^0-9]/', '', $phone);
-
-    // French phone numbers: 10 digits starting with 0
-    if (preg_match('/^0[1-9][0-9]{8}$/', $digits)) {
-        return $digits;
-    }
-
-    // International format with country code
-    if (preg_match('/^33[1-9][0-9]{8}$/', $digits)) {
-        return '0' . substr($digits, 2);
-    }
-
-    return null;
-}
-
-// =============================================================================
-// TOKEN AND QR CODE GENERATION
-// =============================================================================
-
-/**
- * Generate a cryptographically secure random token
- *
- * @param int $length Token length in bytes (results in 2x hex chars)
- * @return string Hex-encoded token
- */
-function generate_token(int $length = 32): string
-{
-    try {
-        return bin2hex(random_bytes($length));
-    } catch (Exception $e) {
-        // Fallback (less secure, should not happen on modern PHP)
-        $token = '';
-        for ($i = 0; $i < $length * 2; $i++) {
-            $token .= dechex(random_int(0, 15));
-        }
-        return $token;
-    }
-}
-
-/**
- * Generate a QR token for visitor checkout
- *
- * @param int $visitorId Visitor ID to encode
- * @return string Unique QR token
- */
-function generate_qr_token(int $visitorId): string
-{
-    // Create a token with visitor ID and random component
-    $randomPart = generate_token(24); // 48 hex chars
-    $timestamp = dechex(time()); // Timestamp for expiration validation
-    $visitorPart = dechex($visitorId);
-
-    // Format: random(48) + timestamp(8) + visitorId(variable)
-    $token = $randomPart . $timestamp . $visitorPart;
-
-    // Add checksum for integrity (first 8 chars of SHA256)
-    $checksum = substr(hash('sha256', $token . ENCRYPTION_KEY), 0, 8);
-
-    return $token . $checksum;
-}
-
-/**
- * Validate a QR token structure
- *
- * @param string $token
- * @return array|null ['visitor_id' => int, 'created_at' => int] or null if invalid
- */
-function validate_qr_token(string $token): ?array
-{
-    if (strlen($token) < 64) {
-        return null;
-    }
-
-    // Extract parts
-    $checksum = substr($token, -8);
-    $payload = substr($token, 0, -8);
-
-    // Verify checksum
-    $expectedChecksum = substr(hash('sha256', $payload . ENCRYPTION_KEY), 0, 8);
-    if (!hash_equals($expectedChecksum, $checksum)) {
-        return null;
-    }
-
-    // Extract timestamp and visitor ID
-    $timestampHex = substr($payload, 48, 8);
-    $visitorIdHex = substr($payload, 56);
-
-    $createdAt = hexdec($timestampHex);
-    $visitorId = hexdec($visitorIdHex);
-
-    // Check expiration
-    $maxAge = QR_CODE_VALIDITY_HOURS * 3600;
-    if (time() - $createdAt > $maxAge) {
-        return null;
-    }
-
-    return [
-        'visitor_id' => $visitorId,
-        'created_at' => $createdAt,
-    ];
+function generate_secure_token(int $length = 32): string {
+    return bin2hex(random_bytes($length / 2));
 }
 
 /**
  * Generate a CSRF token
  *
  * @return string
+ * @throws Exception
  */
-function generate_csrf_token(): string
-{
+function generate_csrf_token(): string {
     if (empty($_SESSION[CSRF_TOKEN_NAME])) {
-        $_SESSION[CSRF_TOKEN_NAME] = generate_token(CSRF_TOKEN_LENGTH);
+        $_SESSION[CSRF_TOKEN_NAME] = generate_secure_token();
+        $_SESSION[CSRF_TOKEN_NAME . '_time'] = time();
     }
     return $_SESSION[CSRF_TOKEN_NAME];
 }
@@ -236,30 +123,47 @@ function generate_csrf_token(): string
 /**
  * Validate CSRF token
  *
- * @param string $token Token to validate
+ * @param string $token
  * @return bool
  */
-function validate_csrf_token(string $token): bool
-{
-    if (empty($_SESSION[CSRF_TOKEN_NAME])) {
+function validate_csrf_token(string $token): bool {
+    if (empty($_SESSION[CSRF_TOKEN_NAME]) || empty($token)) {
         return false;
     }
+
+    // Check token expiry
+    if (!empty($_SESSION[CSRF_TOKEN_NAME . '_time'])) {
+        if (time() - $_SESSION[CSRF_TOKEN_NAME . '_time'] > CSRF_TOKEN_TIME) {
+            return false;
+        }
+    }
+
     return hash_equals($_SESSION[CSRF_TOKEN_NAME], $token);
 }
 
-// =============================================================================
-// DATE AND TIME FORMATTING
-// =============================================================================
+/**
+ * Generate QR code URL
+ *
+ * @param string $token
+ * @param string $type Type of QR code: 'checkout', 'checkin', 'info'
+ * @return string
+ */
+function generate_qr_url(string $token, string $type = 'checkout'): string {
+    return SITE_URL . '/qr.php?type=' . $type . '&token=' . urlencode($token);
+}
+
+// --------------------------------------------------------
+// Date and Time Formatting
+// --------------------------------------------------------
 
 /**
  * Format a duration in minutes to human-readable string
  *
  * @param int $minutes Duration in minutes
- * @param string $locale Locale for formatting (fr/en)
- * @return string Formatted duration
+ * @param string $language Language: 'fr' or 'en'
+ * @return string
  */
-function format_duration(int $minutes, string $locale = 'fr'): string
-{
+function format_duration(int $minutes, string $language = 'fr'): string {
     if ($minutes < 0) {
         $minutes = 0;
     }
@@ -267,24 +171,22 @@ function format_duration(int $minutes, string $locale = 'fr'): string
     $hours = floor($minutes / 60);
     $mins = $minutes % 60;
 
-    if ($locale === 'fr') {
-        $parts = [];
-        if ($hours > 0) {
-            $parts[] = $hours . ' ' . ($hours === 1 ? 'heure' : 'heures');
+    if ($language === 'fr') {
+        if ($hours === 0) {
+            return $mins . ' minute' . ($mins > 1 ? 's' : '');
         }
-        if ($mins > 0 || $hours === 0) {
-            $parts[] = $mins . ' ' . ($mins === 1 ? 'minute' : 'minutes');
+        if ($mins === 0) {
+            return $hours . ' heure' . ($hours > 1 ? 's' : '');
         }
-        return implode(' ', $parts);
+        return $hours . 'h ' . $mins . 'min';
     } else {
-        $parts = [];
-        if ($hours > 0) {
-            $parts[] = $hours . ' ' . ($hours === 1 ? 'hour' : 'hours');
+        if ($hours === 0) {
+            return $mins . ' minute' . ($mins > 1 ? 's' : '');
         }
-        if ($mins > 0 || $hours === 0) {
-            $parts[] = $mins . ' ' . ($mins === 1 ? 'minute' : 'minutes');
+        if ($mins === 0) {
+            return $hours . ' hour' . ($hours > 1 ? 's' : '');
         }
-        return implode(' ', $parts);
+        return $hours . 'h ' . $mins . 'm';
     }
 }
 
@@ -292,279 +194,326 @@ function format_duration(int $minutes, string $locale = 'fr'): string
  * Format a datetime for display
  *
  * @param string|DateTime $datetime
- * @param string $format Custom format or 'date', 'time', 'datetime', 'relative'
- * @param string $locale
+ * @param string $format Custom format (optional)
+ * @param string $language Language: 'fr' or 'en'
  * @return string
  */
-function format_datetime(string|DateTime $datetime, string $format = 'datetime', string $locale = 'fr'): string
-{
+function format_datetime(string|DateTime $datetime, ?string $format = null, string $language = 'fr'): string {
     if (is_string($datetime)) {
         $datetime = new DateTime($datetime);
     }
 
-    // Set locale for IntlDateFormatter if available
-    $localeString = $locale === 'fr' ? 'fr_FR' : 'en_US';
+    $datetime->setTimezone(new DateTimeZone(TIMEZONE));
 
-    if ($format === 'relative') {
-        return format_relative_time($datetime, $locale);
+    if ($format === null) {
+        $format = $language === 'fr' ? 'd/m/Y H:i' : 'Y-m-d H:i';
     }
 
-    $formatString = match ($format) {
-        'date' => DATE_FORMAT,
-        'time' => TIME_FORMAT,
-        'datetime' => DATETIME_FORMAT,
-        'iso' => 'c',
-        'full' => 'l d F Y à H:i',
-        default => $format,
-    };
-
-    // Use IntlDateFormatter for localized dates if available
-    if (class_exists('IntlDateFormatter') && $format !== 'iso') {
-        $formatter = new IntlDateFormatter(
-            $localeString,
-            IntlDateFormatter::SHORT,
-            IntlDateFormatter::SHORT,
-            $datetime->getTimezone()->getName()
-        );
-
-        if ($format === 'date') {
-            $formatter->setPattern('dd/MM/yyyy');
-        } elseif ($format === 'time') {
-            $formatter->setPattern('HH:mm');
-        } elseif ($format === 'full') {
-            $formatter->setPattern("EEEE d MMMM yyyy 'à' HH:mm");
-        }
-
-        return $formatter->format($datetime);
-    }
-
-    return $datetime->format($formatString);
+    return $datetime->format($format);
 }
 
 /**
- * Format relative time (e.g., "2 hours ago")
+ * Format a date for display
  *
- * @param DateTime $datetime
- * @param string $locale
+ * @param string|DateTime $date
+ * @param string $language Language: 'fr' or 'en'
  * @return string
  */
-function format_relative_time(DateTime $datetime, string $locale = 'fr'): string
-{
+function format_date(string|DateTime $date, string $language = 'fr'): string {
+    return format_datetime($date, $language === 'fr' ? 'd/m/Y' : 'Y-m-d', $language);
+}
+
+/**
+ * Format a time for display
+ *
+ * @param string|DateTime $time
+ * @return string
+ */
+function format_time(string|DateTime $time): string {
+    return format_datetime($time, 'H:i');
+}
+
+/**
+ * Get relative time description (e.g., "2 hours ago")
+ *
+ * @param string|DateTime $datetime
+ * @param string $language Language: 'fr' or 'en'
+ * @return string
+ */
+function time_ago(string|DateTime $datetime, string $language = 'fr'): string {
+    if (is_string($datetime)) {
+        $datetime = new DateTime($datetime);
+    }
+
     $now = new DateTime();
     $diff = $now->diff($datetime);
 
-    $isPast = $datetime < $now;
+    $isFuture = $datetime > $now;
 
-    if ($diff->y > 0) {
-        $unit = $locale === 'fr' ? 'an' : 'year';
-        $plural = $diff->y > 1 ? ($locale === 'fr' ? 's' : 's') : '';
-    } elseif ($diff->m > 0) {
-        $unit = $locale === 'fr' ? 'mois' : 'month';
-        $plural = $diff->m > 1 && $locale !== 'fr' ? 's' : '';
-    } elseif ($diff->d > 0) {
-        $unit = $locale === 'fr' ? 'jour' : 'day';
-        $plural = $diff->d > 1 ? ($locale === 'fr' ? 's' : 's') : '';
-    } elseif ($diff->h > 0) {
-        $unit = $locale === 'fr' ? 'heure' : 'hour';
-        $plural = $diff->h > 1 ? ($locale === 'fr' ? 's' : 's') : '';
-        $value = $diff->h;
-    } elseif ($diff->i > 0) {
-        $unit = $locale === 'fr' ? 'minute' : 'minute';
-        $plural = $diff->i > 1 ? ($locale === 'fr' ? 's' : 's') : '';
-        $value = $diff->i;
+    if ($language === 'fr') {
+        $suffix = $isFuture ? 'dans ' : '';
+        $prefix = $isFuture ? '' : ' il y a';
+
+        if ($diff->y > 0) return $suffix . $diff->y . ' an' . ($diff->y > 1 ? 's' : '') . $prefix;
+        if ($diff->m > 0) return $suffix . $diff->m . ' mois' . $prefix;
+        if ($diff->d > 0) return $suffix . $diff->d . ' jour' . ($diff->d > 1 ? 's' : '') . $prefix;
+        if ($diff->h > 0) return $suffix . $diff->h . ' heure' . ($diff->h > 1 ? 's' : '') . $prefix;
+        if ($diff->i > 0) return $suffix . $diff->i . ' minute' . ($diff->i > 1 ? 's' : '') . $prefix;
+        return $isFuture ? 'dans quelques secondes' : 'à l\'instant';
     } else {
-        return $locale === 'fr' ? 'à l\'instant' : 'just now';
-    }
+        $suffix = $isFuture ? 'in ' : ' ago';
+        $prefix = $isFuture ? '' : '';
 
-    if (!isset($value)) {
-        $value = $diff->y ?: $diff->m ?: $diff->d;
-    }
-
-    if ($isPast) {
-        return $locale === 'fr'
-            ? "il y a {$value} {$unit}{$plural}"
-            : "{$value} {$unit}{$plural} ago";
-    } else {
-        return $locale === 'fr'
-            ? "dans {$value} {$unit}{$plural}"
-            : "in {$value} {$unit}{$plural}";
+        if ($diff->y > 0) return $prefix . $diff->y . ' year' . ($diff->y > 1 ? 's' : '') . $suffix;
+        if ($diff->m > 0) return $prefix . $diff->m . ' month' . ($diff->m > 1 ? 's' : '') . $suffix;
+        if ($diff->d > 0) return $prefix . $diff->d . ' day' . ($diff->d > 1 ? 's' : '') . $suffix;
+        if ($diff->h > 0) return $prefix . $diff->h . ' hour' . ($diff->h > 1 ? 's' : '') . $suffix;
+        if ($diff->i > 0) return $prefix . $diff->i . ' minute' . ($diff->i > 1 ? 's' : '') . $suffix;
+        return $isFuture ? 'in a few seconds' : 'just now';
     }
 }
 
-// =============================================================================
-// SETTINGS MANAGEMENT
-// =============================================================================
+// --------------------------------------------------------
+// Settings Management
+// --------------------------------------------------------
 
 /**
  * Get a setting value from the database
  *
  * @param string $key Setting key
- * @param mixed $default Default value if not found
- * @return mixed Setting value
+ * @param mixed $default Default value if setting not found
+ * @return mixed
  */
-function get_setting(string $key, mixed $default = null): mixed
-{
+function get_setting(string $key, mixed $default = null): mixed {
     static $settings = null;
 
-    // Load all settings once per request
+    // Cache settings to avoid repeated queries
     if ($settings === null) {
-        $settings = [];
         try {
-            require_once __DIR__ . '/db.php';
-            $db = Database::getInstance();
-            $rows = $db->fetchAll("SELECT setting_key, setting_value, is_json FROM settings");
+            $db = db();
+            $stmt = $db->query("SELECT setting_key, setting_value, setting_type FROM settings");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $settings = [];
             foreach ($rows as $row) {
-                $value = $row['setting_value'];
-                if ($row['is_json']) {
-                    $decoded = json_decode($value, true);
-                    $value = $decoded !== null ? $decoded : $value;
-                }
-                $settings[$row['setting_key']] = $value;
+                $settings[$row['setting_key']] = self::cast_setting_value($row['setting_value'], $row['setting_type']);
             }
-        } catch (Exception $e) {
+        } catch (PDOException $e) {
             error_log("Failed to load settings: " . $e->getMessage());
-            // Fall back to defaults
+            return $default;
         }
     }
 
-    // Return cached value or default
-    if (array_key_exists($key, $settings)) {
-        return $settings[$key];
-    }
+    return $settings[$key] ?? $default;
+}
 
-    // Check for constant fallback
-    $constantKey = strtoupper($key);
-    if (defined($constantKey)) {
-        return constant($constantKey);
-    }
-
-    return $default;
+/**
+ * Cast setting value based on type
+ *
+ * @param string $value
+ * @param string $type
+ * @return mixed
+ */
+function cast_setting_value(string $value, string $type): mixed {
+    return match ($type) {
+        'integer' => (int) $value,
+        'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
+        'json', 'array' => json_decode($value, true) ?? [],
+        default => $value
+    };
 }
 
 /**
  * Update a setting value
  *
  * @param string $key Setting key
- * @param mixed $value Setting value
- * @param bool $isJson Whether value should be stored as JSON
- * @return bool Success
- */
-function set_setting(string $key, mixed $value, bool $isJson = false): bool
-{
-    try {
-        require_once __DIR__ . '/db.php';
-        $db = Database::getInstance();
-
-        if (is_array($value) || is_object($value)) {
-            $value = json_encode($value);
-            $isJson = true;
-        }
-
-        $sql = "INSERT INTO settings (setting_key, setting_value, is_json)
-                VALUES (:key, :value, :is_json)
-                ON DUPLICATE KEY UPDATE
-                setting_value = :value,
-                is_json = :is_json,
-                updated_at = CURRENT_TIMESTAMP";
-
-        $db->execute($sql, [
-            'key' => $key,
-            'value' => $value,
-            'is_json' => $isJson ? 1 : 0,
-        ]);
-
-        // Clear cache
-        global $settings;
-        $settings = null;
-
-        return true;
-    } catch (Exception $e) {
-        error_log("Failed to update setting {$key}: " . $e->getMessage());
-        return false;
-    }
-}
-
-// =============================================================================
-// SECURITY UTILITIES
-// =============================================================================
-
-/**
- * Generate a secure password hash
- *
- * @param string $password Plain text password
- * @return string Hashed password
- */
-function hash_password(string $password): string
-{
-    return password_hash($password, PASSWORD_BCRYPT, ['cost' => PASSWORD_COST]);
-}
-
-/**
- * Verify a password against a hash
- *
- * @param string $password Plain text password
- * @param string $hash Stored hash
+ * @param mixed $value New value
+ * @param string $type Value type
  * @return bool
  */
-function verify_password(string $password, string $hash): bool
-{
-    return password_verify($password, $hash);
+function set_setting(string $key, mixed $value, string $type = 'string'): bool {
+    try {
+        if (is_array($value) || is_object($value)) {
+            $value = json_encode($value);
+            $type = 'json';
+        } elseif (is_bool($value)) {
+            $value = $value ? 'true' : 'false';
+            $type = 'boolean';
+        } elseif (is_int($value)) {
+            $type = 'integer';
+        }
+
+        $db = db();
+        $stmt = $db->prepare("
+            INSERT INTO settings (setting_key, setting_value, setting_type, updated_at, updated_by)
+            VALUES (:key, :value, :type, NOW(), :user)
+            ON DUPLICATE KEY UPDATE
+                setting_value = :value,
+                setting_type = :type,
+                updated_at = NOW(),
+                updated_by = :user
+        ");
+
+        $user = $_SESSION['user_email'] ?? 'system';
+
+        return $stmt->execute([
+            ':key' => $key,
+            ':value' => $value,
+            ':type' => $type,
+            ':user' => $user
+        ]);
+    } catch (PDOException $e) {
+        error_log("Failed to update setting '$key': " . $e->getMessage());
+        return false;
+    }
 }
 
 /**
- * Encrypt sensitive data
- *
- * @param string $data Data to encrypt
- * @return string|false Encrypted data or false on failure
+ * Clear settings cache
  */
-function encrypt_data(string $data): string|false
-{
-    if (empty(ENCRYPTION_KEY)) {
-        error_log("Encryption key not configured");
-        return false;
+function clear_settings_cache(): void {
+    // Static cache will be cleared on next request
+}
+
+// --------------------------------------------------------
+// String Utilities
+// --------------------------------------------------------
+
+/**
+ * Truncate a string to a maximum length
+ *
+ * @param string $string
+ * @param int $length
+ * @param string $suffix
+ * @return string
+ */
+function truncate(string $string, int $length = 100, string $suffix = '...'): string {
+    if (strlen($string) <= $length) {
+        return $string;
     }
-
-    $key = base64_decode(ENCRYPTION_KEY);
-    if (strlen($key) !== 32) {
-        error_log("Invalid encryption key length");
-        return false;
-    }
-
-    $iv = random_bytes(16);
-    $encrypted = openssl_encrypt($data, 'AES-256-GCM', $key, OPENSSL_RAW_DATA, $iv, $tag);
-
-    if ($encrypted === false) {
-        return false;
-    }
-
-    return base64_encode($iv . $tag . $encrypted);
+    return substr($string, 0, $length - strlen($suffix)) . $suffix;
 }
 
 /**
- * Decrypt sensitive data
+ * Convert string to slug (URL-friendly)
  *
- * @param string $data Data to decrypt
- * @return string|false Decrypted data or false on failure
+ * @param string $string
+ * @return string
  */
-function decrypt_data(string $data): string|false
-{
-    if (empty(ENCRYPTION_KEY)) {
-        error_log("Encryption key not configured");
-        return false;
+function slugify(string $string): string {
+    $string = transliterator_transliterate('Any-Latin; Latin-ASCII; Lower()', $string);
+    $string = preg_replace('/[^a-z0-9]+/', '-', $string);
+    return trim($string, '-');
+}
+
+/**
+ * Generate initials from a name
+ *
+ * @param string $name
+ * @return string
+ */
+function get_initials(string $name): string {
+    $parts = explode(' ', trim($name));
+    $initials = '';
+
+    foreach ($parts as $part) {
+        if (!empty($part)) {
+            $initials .= strtoupper($part[0]);
+        }
     }
 
-    $key = base64_decode(ENCRYPTION_KEY);
-    $data = base64_decode($data);
+    return substr($initials, 0, 2);
+}
 
-    if (strlen($data) < 32) {
-        return false;
+// --------------------------------------------------------
+// Array Utilities
+// --------------------------------------------------------
+
+/**
+ * Get a value from an array using dot notation
+ *
+ * @param array $array
+ * @param string $key
+ * @param mixed $default
+ * @return mixed
+ */
+function array_get(array $array, string $key, mixed $default = null): mixed {
+    $keys = explode('.', $key);
+
+    foreach ($keys as $k) {
+        if (!is_array($array) || !array_key_exists($k, $array)) {
+            return $default;
+        }
+        $array = $array[$k];
     }
 
-    $iv = substr($data, 0, 16);
-    $tag = substr($data, 16, 16);
-    $ciphertext = substr($data, 32);
+    return $array;
+}
 
-    return openssl_decrypt($ciphertext, 'AES-256-GCM', $key, OPENSSL_RAW_DATA, $iv, $tag);
+/**
+ * Set a value in an array using dot notation
+ *
+ * @param array $array
+ * @param string $key
+ * @param mixed $value
+ * @return array
+ */
+function array_set(array &$array, string $key, mixed $value): array {
+    $keys = explode('.', $key);
+    $current = &$array;
+
+    foreach ($keys as $k) {
+        if (!isset($current[$k]) || !is_array($current[$k])) {
+            $current[$k] = [];
+        }
+        $current = &$current[$k];
+    }
+
+    $current = $value;
+    return $array;
+}
+
+// --------------------------------------------------------
+// HTTP and Response Utilities
+// --------------------------------------------------------
+
+/**
+ * Send JSON response
+ *
+ * @param mixed $data
+ * @param int $statusCode
+ */
+function json_response(mixed $data, int $statusCode = 200): void {
+    http_response_code($statusCode);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/**
+ * Send error response
+ *
+ * @param string $message
+ * @param int $statusCode
+ * @param array $errors
+ */
+function error_response(string $message, int $statusCode = 400, array $errors = []): void {
+    $response = ['success' => false, 'message' => $message];
+    if (!empty($errors)) {
+        $response['errors'] = $errors;
+    }
+    json_response($response, $statusCode);
+}
+
+/**
+ * Send success response
+ *
+ * @param array $data
+ * @param string $message
+ */
+function success_response(array $data = [], string $message = 'Success'): void {
+    $response = array_merge(['success' => true, 'message' => $message], $data);
+    json_response($response);
 }
 
 /**
@@ -572,250 +521,120 @@ function decrypt_data(string $data): string|false
  *
  * @return string
  */
-function get_client_ip(): string
-{
-    $headers = [
-        'HTTP_CF_CONNECTING_IP', // Cloudflare
-        'HTTP_X_FORWARDED_FOR',
-        'HTTP_X_FORWARDED',
-        'HTTP_X_CLUSTER_CLIENT_IP',
-        'HTTP_FORWARDED_FOR',
-        'HTTP_FORWARDED',
-        'REMOTE_ADDR',
-    ];
+function get_client_ip(): string {
+    $headers = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'];
 
     foreach ($headers as $header) {
         if (!empty($_SERVER[$header])) {
             $ips = explode(',', $_SERVER[$header]);
             $ip = trim($ips[0]);
-            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            if (filter_var($ip, FILTER_VALIDATE_IP)) {
                 return $ip;
             }
         }
     }
 
-    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-}
-
-/**
- * Check if request is from a valid IP range
- *
- * @param array $allowedRanges Array of allowed IP ranges (CIDR notation)
- * @return bool
- */
-function is_ip_allowed(array $allowedRanges): bool
-{
-    if (empty($allowedRanges)) {
-        return true;
-    }
-
-    $clientIp = get_client_ip();
-
-    foreach ($allowedRanges as $range) {
-        if (ip_in_range($clientIp, $range)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-/**
- * Check if IP is in CIDR range
- *
- * @param string $ip
- * @param string $range CIDR range (e.g., "192.168.1.0/24")
- * @return bool
- */
-function ip_in_range(string $ip, string $range): bool
-{
-    if (strpos($range, '/') === false) {
-        return $ip === $range;
-    }
-
-    list($range, $netmask) = explode('/', $range, 2);
-    $rangeDecimal = ip2long($range);
-    $ipDecimal = ip2long($ip);
-    $wildcard = pow(2, (32 - $netmask)) - 1;
-    $netmaskDecimal = ~$wildcard;
-
-    return (($ipDecimal & $netmaskDecimal) === ($rangeDecimal & $netmaskDecimal));
-}
-
-// =============================================================================
-// ARRAY AND STRING UTILITIES
-// =============================================================================
-
-/**
- * Get array value with dot notation
- *
- * @param array $array
- * @param string $key Dot-separated key (e.g., "user.name")
- * @param mixed $default
- * @return mixed
- */
-function array_get(array $array, string $key, mixed $default = null): mixed
-{
-    if (isset($array[$key])) {
-        return $array[$key];
-    }
-
-    $keys = explode('.', $key);
-    foreach ($keys as $segment) {
-        if (!is_array($array) || !array_key_exists($segment, $array)) {
-            return $default;
-        }
-        $array = $array[$segment];
-    }
-
-    return $array;
-}
-
-/**
- * Pluralize a word (basic English/French support)
- *
- * @param int $count
- * @param string $singular
- * @param string|null $plural
- * @param string $locale
- * @return string
- */
-function pluralize(int $count, string $singular, ?string $plural = null, string $locale = 'fr'): string
-{
-    if ($count === 1) {
-        return "1 {$singular}";
-    }
-
-    if ($plural === null) {
-        $plural = $locale === 'fr' ? $singular . 's' : $singular . 's';
-    }
-
-    return "{$count} {$plural}";
-}
-
-/**
- * Truncate text to specified length
- *
- * @param string $text
- * @param int $length
- * @param string $suffix
- * @return string
- */
-function truncate(string $text, int $length = 100, string $suffix = '...'): string
-{
-    if (strlen($text) <= $length) {
-        return $text;
-    }
-
-    return substr($text, 0, $length - strlen($suffix)) . $suffix;
-}
-
-/**
- * Generate a slug from a string
- *
- * @param string $string
- * @return string
- */
-function slugify(string $string): string
-{
-    // Transliterate to ASCII
-    $string = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $string);
-    // Convert to lowercase
-    $string = strtolower($string);
-    // Replace non-alphanumeric with hyphens
-    $string = preg_replace('/[^a-z0-9]+/', '-', $string);
-    // Remove leading/trailing hyphens
-    $string = trim($string, '-');
-    // Collapse multiple hyphens
-    $string = preg_replace('/-+/', '-', $string);
-
-    return $string;
-}
-
-// =============================================================================
-// HTTP AND REDIRECT UTILITIES
-// =============================================================================
-
-/**
- * Send JSON response and exit
- *
- * @param mixed $data Response data
- * @param int $status HTTP status code
- * @return never
- */
-function json_response(mixed $data, int $status = 200): never
-{
-    http_response_code($status);
-    header('Content-Type: application/json; charset=utf-8');
-    header('X-Content-Type-Options: nosniff');
-    echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    exit;
+    return '0.0.0.0';
 }
 
 /**
  * Redirect to a URL
  *
  * @param string $url
- * @param int $status HTTP status code
- * @return never
+ * @param int $statusCode
  */
-function redirect(string $url, int $status = 302): never
-{
-    // Prevent header injection
-    $url = str_replace(["\r", "\n"], '', $url);
-
-    header("Location: {$url}", true, $status);
+function redirect(string $url, int $statusCode = 302): void {
+    header("Location: $url", true, $statusCode);
     exit;
 }
 
+// --------------------------------------------------------
+// File and Path Utilities
+// --------------------------------------------------------
+
 /**
- * Get current URL
+ * Ensure directory exists, create if not
  *
- * @param bool $withQueryString
- * @return string
+ * @param string $path
+ * @param int $permissions
+ * @return bool
  */
-function current_url(bool $withQueryString = true): string
-{
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $uri = $_SERVER['REQUEST_URI'] ?? '/';
-
-    if (!$withQueryString && strpos($uri, '?') !== false) {
-        $uri = substr($uri, 0, strpos($uri, '?'));
+function ensure_directory(string $path, int $permissions = 0755): bool {
+    if (!is_dir($path)) {
+        return mkdir($path, $permissions, true);
     }
-
-    return "{$protocol}://{$host}{$uri}";
+    return true;
 }
 
 /**
- * Flash message helper
+ * Generate a safe filename
  *
- * @param string|null $type Message type (success, error, warning, info)
- * @param string|null $message Message text
- * @return array|null Current messages or null
+ * @param string $originalName
+ * @return string
  */
-function flash(?string $type = null, ?string $message = null): ?array
-{
-    if (!isset($_SESSION)) {
-        session_start();
+function safe_filename(string $originalName): string {
+    $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+    $basename = pathinfo($originalName, PATHINFO_FILENAME);
+    $basename = slugify($basename);
+    $basename = substr($basename, 0, 50);
+    $timestamp = date('Ymd-His');
+    $random = substr(generate_secure_token(8), 0, 8);
+
+    return sprintf('%s-%s-%s.%s', $basename, $timestamp, $random, $extension);
+}
+
+// --------------------------------------------------------
+// Logging Utilities
+// --------------------------------------------------------
+
+/**
+ * Write to application log
+ *
+ * @param string $message
+ * @param string $level
+ * @param array $context
+ */
+function log_message(string $message, string $level = 'info', array $context = []): void {
+    $logFile = LOG_PATH . '/' . date('Y-m-d') . '.log';
+
+    ensure_directory(LOG_PATH);
+
+    $entry = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'level' => strtoupper($level),
+        'message' => $message,
+        'context' => $context,
+        'ip' => get_client_ip()
+    ];
+
+    $line = json_encode($entry, JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+}
+
+/**
+ * Log an audit event
+ *
+ * @param string $action
+ * @param array $details
+ * @param int|null $visitorId
+ */
+function log_audit(string $action, array $details = [], ?int $visitorId = null): void {
+    try {
+        $db = db();
+        $stmt = $db->prepare("
+            INSERT INTO audit_log (action, user_email, visitor_id, details, ip_address, user_agent)
+            VALUES (:action, :user, :visitor_id, :details, :ip, :user_agent)
+        ");
+
+        $stmt->execute([
+            ':action' => $action,
+            ':user' => $_SESSION['user_email'] ?? null,
+            ':visitor_id' => $visitorId,
+            ':details' => json_encode($details),
+            ':ip' => get_client_ip(),
+            ':user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null
+        ]);
+    } catch (PDOException $e) {
+        error_log("Failed to write audit log: " . $e->getMessage());
     }
-
-    if (!isset($_SESSION['flash_messages'])) {
-        $_SESSION['flash_messages'] = [];
-    }
-
-    // Set message
-    if ($type !== null && $message !== null) {
-        $_SESSION['flash_messages'][] = [
-            'type' => $type,
-            'message' => $message,
-        ];
-        return null;
-    }
-
-    // Get and clear messages
-    $messages = $_SESSION['flash_messages'];
-    $_SESSION['flash_messages'] = [];
-
-    return $messages;
 }
