@@ -46,9 +46,24 @@ define('MS_GRAPH_CLIENT_SECRET', $_ENV['MS_GRAPH_CLIENT_SECRET'] ?? '');
 define('MS_GRAPH_FROM_EMAIL', $_ENV['MS_GRAPH_FROM_EMAIL'] ?? 'visitors@yourdomain.com');
 define('MS_GRAPH_FROM_NAME', $_ENV['MS_GRAPH_FROM_NAME'] ?? 'SAP Visitor System');
 
+// Auto-detect base URL from request
+function getBaseUrl() {
+    if (!empty($_ENV['BASE_URL'])) {
+        return $_ENV['BASE_URL'];
+    }
+
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+                (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+                (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http';
+
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
+
+    return $protocol . '://' . $host;
+}
+
 // Application Settings
-define('BASE_URL', $_ENV['BASE_URL'] ?? 'https://visitors.yourdomain.com');
-define('SITE_URL', $_ENV['BASE_URL'] ?? 'https://visitors.yourdomain.com'); // Alias for compatibility
+define('BASE_URL', getBaseUrl());
+define('SITE_URL', BASE_URL); // Alias for compatibility
 define('SITE_NAME', $_ENV['SITE_NAME'] ?? 'SAP Office');
 define('TIMEZONE', $_ENV['TIMEZONE'] ?? 'Europe/Paris');
 
