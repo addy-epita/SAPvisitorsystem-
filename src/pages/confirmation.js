@@ -16,13 +16,17 @@ export async function renderConfirmation() {
   const type = params.type || 'checkin';
   const visitorId = params.id;
 
+  console.log('Confirmation page - params:', { type, visitorId });
+
   let visitor = null;
   if (visitorId && type === 'checkin') {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('visitors')
       .select('first_name, last_name, company, qr_token, arrival_time, expected_duration')
       .eq('id', visitorId)
       .maybeSingle();
+
+    console.log('Visitor query result:', { data, error });
     visitor = data;
   }
 
