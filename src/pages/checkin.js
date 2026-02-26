@@ -147,6 +147,44 @@ export async function renderCheckin() {
       return;
     }
 
+    // Generate action token for host confirmation
+    const actionToken = crypto.randomUUID().replace(/-/g, '');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    await supabase.from('action_tokens').insert({
+      visitor_id: data.id,
+      token: actionToken,
+      action_type: 'confirm_present',
+      expires_at: expiresAt.toISOString(),
+    });
+
+    // Send arrival notification email (fire and forget)
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          visitor_id: data.id,
+          type: 'arrival',
+          visitor_name: `${data.first_name} ${data.last_name}`,
+          company: data.company,
+          host_email: data.host_email,
+          host_name: hostName || data.host_email,
+          arrival_time: data.arrival_time,
+          action_token: actionToken,
+        }),
+      }).catch(err => console.error('Email notification error:', err));
+    } catch (err) {
+      console.error('Failed to trigger notification:', err);
+    }
+
     navigate(`/confirmation?type=checkin&id=${data.id}`);
   });
 }

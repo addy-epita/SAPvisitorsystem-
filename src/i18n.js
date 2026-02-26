@@ -78,6 +78,11 @@ const translations = {
     required: 'Ce champ est obligatoire',
     invalidEmail: 'Email invalide',
     visitorNotFound: 'Visiteur non trouve. Verifiez vos informations.',
+    yourCheckoutQR: 'Votre QR Code de Sortie',
+    qrInstruction: 'Sauvegardez ce QR code pour faciliter votre depart',
+    downloadQR: 'Telecharger le QR Code',
+    scanningForQR: 'Recherche de QR code...',
+    qrDetected: 'QR code detecte !',
   },
   en: {
     welcome: 'Welcome to SAP',
@@ -158,6 +163,11 @@ const translations = {
     required: 'This field is required',
     invalidEmail: 'Invalid email',
     visitorNotFound: 'Visitor not found. Please check your information.',
+    yourCheckoutQR: 'Your Check-out QR Code',
+    qrInstruction: 'Save this QR code to make check-out easier',
+    downloadQR: 'Download QR Code',
+    scanningForQR: 'Scanning for QR code...',
+    qrDetected: 'QR code detected!',
   },
 };
 

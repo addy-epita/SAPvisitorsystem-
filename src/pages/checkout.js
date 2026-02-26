@@ -1,6 +1,7 @@
 import { t } from '../i18n.js';
 import { navigate } from '../router.js';
 import { supabase } from '../supabase.js';
+import { Html5Qrcode } from 'html5-qrcode';
 
 export function renderCheckout() {
   const app = document.getElementById('app');
@@ -31,6 +32,26 @@ export function renderCheckout() {
               ${t('scanQr')}
             </h2>
             <p class="glass-panel-hint">${t('helpText')}</p>
+
+            <div id="qrScanner" class="qr-scanner-container"></div>
+
+            <div class="scanner-controls">
+              <button id="startScanBtn" class="btn-scanner-control">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                ${t('startScanner')}
+              </button>
+              <button id="stopScanBtn" class="btn-scanner-control hidden">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
+                </svg>
+                ${t('stopScanner')}
+              </button>
+            </div>
+
             <div id="scannerStatus" class="scanner-status hidden">
               <div class="spinner-blue"></div>
               <span>${t('processing')}</span>
@@ -72,6 +93,99 @@ export function renderCheckout() {
       </div>
     </div>
   `;
+
+  let html5QrCode = null;
+  let isScanning = false;
+
+  const startScanBtn = document.getElementById('startScanBtn');
+  const stopScanBtn = document.getElementById('stopScanBtn');
+  const scannerStatus = document.getElementById('scannerStatus');
+
+  startScanBtn.addEventListener('click', async () => {
+    if (isScanning) return;
+
+    try {
+      html5QrCode = new Html5Qrcode('qrScanner');
+
+      await html5QrCode.start(
+        { facingMode: 'environment' },
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 }
+        },
+        async (decodedText) => {
+          if (isScanning) return;
+          isScanning = true;
+
+          scannerStatus.classList.remove('hidden');
+          scannerStatus.innerHTML = `
+            <div class="spinner-blue"></div>
+            <span>${t('qrDetected')}</span>
+          `;
+
+          await html5QrCode.stop();
+          stopScanBtn.classList.add('hidden');
+          startScanBtn.classList.remove('hidden');
+
+          await handleQRCheckout(decodedText);
+        }
+      );
+
+      startScanBtn.classList.add('hidden');
+      stopScanBtn.classList.remove('hidden');
+    } catch (error) {
+      console.error('Scanner error:', error);
+      alert(t('cameraError'));
+    }
+  });
+
+  stopScanBtn.addEventListener('click', async () => {
+    if (html5QrCode) {
+      await html5QrCode.stop();
+      stopScanBtn.classList.add('hidden');
+      startScanBtn.classList.remove('hidden');
+      scannerStatus.classList.add('hidden');
+      isScanning = false;
+    }
+  });
+
+  async function handleQRCheckout(qrToken) {
+    const { data: visitor, error } = await supabase
+      .from('visitors')
+      .select('id')
+      .eq('qr_token', qrToken)
+      .eq('status', 'checked_in')
+      .maybeSingle();
+
+    if (error || !visitor) {
+      scannerStatus.innerHTML = `<span style="color: #ef4444;">${t('visitorNotFound')}</span>`;
+      setTimeout(() => {
+        scannerStatus.classList.add('hidden');
+        isScanning = false;
+      }, 3000);
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from('visitors')
+      .update({
+        status: 'checked_out',
+        departure_time: new Date().toISOString(),
+        checkout_method: 'qr_scan',
+      })
+      .eq('id', visitor.id);
+
+    if (updateError) {
+      scannerStatus.innerHTML = `<span style="color: #ef4444;">${t('errorMessage')}</span>`;
+      setTimeout(() => {
+        scannerStatus.classList.add('hidden');
+        isScanning = false;
+      }, 3000);
+      return;
+    }
+
+    navigate('/confirmation?type=checkout');
+  }
 
   document.getElementById('manualCheckoutForm').addEventListener('submit', async (e) => {
     e.preventDefault();

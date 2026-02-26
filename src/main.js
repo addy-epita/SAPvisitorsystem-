@@ -4,6 +4,7 @@ import { renderHome } from './pages/home.js';
 import { renderCheckin } from './pages/checkin.js';
 import { renderCheckout } from './pages/checkout.js';
 import { renderConfirmation } from './pages/confirmation.js';
+import { renderConfirmAction } from './pages/confirm-action.js';
 import { renderAdmin } from './pages/admin.js';
 import { t, getLang, toggleLang } from './i18n.js';
 
@@ -57,6 +58,7 @@ registerRoute('/', () => renderHome());
 registerRoute('/checkin', () => renderCheckin());
 registerRoute('/checkout', () => renderCheckout());
 registerRoute('/confirmation', () => renderConfirmation());
+registerRoute('/confirm-action', () => renderConfirmAction());
 registerRoute('/admin', () => renderAdmin());
 
 renderLayout();
