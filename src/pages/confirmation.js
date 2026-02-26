@@ -105,7 +105,7 @@ export async function renderConfirmation() {
       </div>
     `;
 
-    generateQRCode(visitor.qr_token);
+    setTimeout(() => generateQRCode(visitor.qr_token), 100);
   } else {
     app.innerHTML = `
       <div class="confirmation-layout">
@@ -135,7 +135,16 @@ function startAutoRedirect() {
 
 async function generateQRCode(token) {
   const canvas = document.getElementById('qrCanvas');
-  if (!canvas) return;
+  if (!canvas) {
+    console.error('QR Canvas element not found');
+    return;
+  }
+
+  if (!token) {
+    console.error('No QR token provided');
+    canvas.parentElement.innerHTML = '<p style="color: #ef4444;">QR code generation failed - no token</p>';
+    return;
+  }
 
   try {
     await QRCode.toCanvas(canvas, token, {
@@ -159,5 +168,6 @@ async function generateQRCode(token) {
     }
   } catch (error) {
     console.error('QR generation error:', error);
+    canvas.parentElement.innerHTML = '<p style="color: #ef4444;">Failed to generate QR code</p>';
   }
 }
