@@ -1,4 +1,3 @@
-import { t } from '../i18n.js';
 import { getRouteParams } from '../router.js';
 import { supabase } from '../supabase.js';
 import QRCode from 'qrcode';
@@ -16,17 +15,13 @@ export async function renderConfirmation() {
   const type = params.type || 'checkin';
   const visitorId = params.id;
 
-  console.log('Confirmation page - params:', { type, visitorId });
-
   let visitor = null;
   if (visitorId && type === 'checkin') {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('visitors')
-      .select('first_name, last_name, company, qr_token, arrival_time, expected_duration')
+      .select('first_name, last_name, company, phone, qr_token, arrival_time, expected_duration')
       .eq('id', visitorId)
       .maybeSingle();
-
-    console.log('Visitor query result:', { data, error });
     visitor = data;
   }
 
@@ -41,15 +36,15 @@ export async function renderConfirmation() {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
             </svg>
           </div>
-          <h1 class="confirmation-title">${t('checkoutTitle')}</h1>
-          <p class="confirmation-subtitle">${t('checkoutSubtitle')}</p>
+          <h1 class="confirmation-title">Au Revoir !</h1>
+          <p class="confirmation-subtitle">Merci pour votre visite</p>
 
           <div class="confirmation-message-box">
-            <p class="confirmation-message">${t('checkoutMessage')}</p>
-            <p class="confirmation-sub">${t('safeTravels')}</p>
+            <p class="confirmation-message">Votre départ a été enregistré avec succès.</p>
+            <p class="confirmation-sub">Bonne journée et bon retour !</p>
           </div>
 
-          <a href="#/" class="btn-confirmation-primary">${t('backHome')}</a>
+          <a href="#/" class="btn-confirmation-primary">Retour à l'accueil</a>
         </div>
       </div>
     `;
@@ -59,6 +54,8 @@ export async function renderConfirmation() {
 
   if (visitor) {
     const arrivalTime = new Date(visitor.arrival_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const arrivalDate = new Date(visitor.arrival_time).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+
     app.innerHTML = `
       <div class="confirmation-layout">
         <div class="confirmation-container animate-fade-in">
@@ -67,44 +64,49 @@ export async function renderConfirmation() {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
           </div>
-          <h1 class="confirmation-title">${t('checkinTitle')}</h1>
-          <p class="confirmation-subtitle">${t('checkinSubtitle')}</p>
+          <h1 class="confirmation-title">Enregistrement Réussi</h1>
+          <p class="confirmation-subtitle">Bienvenue chez SAP — Service Aviation Paris</p>
 
           <div class="visitor-info-card">
-            <h3 class="visitor-info-heading">${t('visitorInfo')}</h3>
+            <h3 class="visitor-info-heading">Informations visiteur</h3>
             <div class="info-row">
-              <span class="info-label">${t('name')}</span>
+              <span class="info-label">Nom</span>
               <span class="info-value">${visitor.first_name} ${visitor.last_name}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">${t('company')}</span>
+              <span class="info-label">Société</span>
               <span class="info-value">${visitor.company}</span>
             </div>
+            ${visitor.phone ? `
             <div class="info-row">
-              <span class="info-label">${t('arrivalTime')}</span>
-              <span class="info-value">${arrivalTime}</span>
+              <span class="info-label">Téléphone</span>
+              <span class="info-value">${visitor.phone}</span>
+            </div>` : ''}
+            <div class="info-row">
+              <span class="info-label">Arrivée</span>
+              <span class="info-value">${arrivalDate} à ${arrivalTime}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">${t('expectedDuration')}</span>
+              <span class="info-label">Durée prévue</span>
               <span class="info-value">${formatDuration(visitor.expected_duration)}</span>
             </div>
           </div>
 
           <div class="qr-code-card">
-            <h3 class="qr-code-heading">${t('yourCheckoutQR')}</h3>
-            <p class="qr-code-instruction">${t('qrInstruction')}</p>
+            <h3 class="qr-code-heading">Votre QR Code de Visite</h3>
+            <p class="qr-code-instruction">Conservez ce QR code — il vous permettra de vous déconnecter plus rapidement</p>
             <div class="qr-code-wrapper">
               <canvas id="qrCanvas"></canvas>
             </div>
             <button id="downloadQR" class="btn-qr-download">
-              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
               </svg>
-              ${t('downloadQR')}
+              Télécharger le QR Code
             </button>
           </div>
 
-          <a href="#/" class="btn-confirmation-primary">${t('backHome')}</a>
+          <a href="#/" class="btn-confirmation-primary">Retour à l'accueil</a>
         </div>
       </div>
     `;
@@ -119,9 +121,9 @@ export async function renderConfirmation() {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
           </div>
-          <h1 class="confirmation-title">${t('checkinTitle')}</h1>
-          <p class="confirmation-subtitle">${t('checkinSubtitle')}</p>
-          <a href="#/" class="btn-confirmation-primary">${t('backHome')}</a>
+          <h1 class="confirmation-title">Enregistrement Réussi</h1>
+          <p class="confirmation-subtitle">Bienvenue chez SAP</p>
+          <a href="#/" class="btn-confirmation-primary">Retour à l'accueil</a>
         </div>
       </div>
     `;
@@ -139,25 +141,16 @@ function startAutoRedirect() {
 
 async function generateQRCode(token) {
   const canvas = document.getElementById('qrCanvas');
-  if (!canvas) {
-    console.error('QR Canvas element not found');
-    return;
-  }
-
-  if (!token) {
-    console.error('No QR token provided');
-    canvas.parentElement.innerHTML = '<p style="color: #ef4444;">QR code generation failed - no token</p>';
-    return;
-  }
+  if (!canvas || !token) return;
 
   try {
     await QRCode.toCanvas(canvas, token, {
-      width: 280,
+      width: 240,
       margin: 2,
       color: {
-        dark: '#1a1a1a',
-        light: '#ffffff'
-      }
+        dark: '#1140A9',
+        light: '#ffffff',
+      },
     });
 
     const downloadBtn = document.getElementById('downloadQR');
@@ -165,13 +158,12 @@ async function generateQRCode(token) {
       downloadBtn.addEventListener('click', () => {
         const dataUrl = canvas.toDataURL('image/png');
         const link = document.createElement('a');
-        link.download = `visitor-qr-${token.substring(0, 8)}.png`;
+        link.download = `qr-visite-${token.substring(0, 8)}.png`;
         link.href = dataUrl;
         link.click();
       });
     }
   } catch (error) {
     console.error('QR generation error:', error);
-    canvas.parentElement.innerHTML = '<p style="color: #ef4444;">Failed to generate QR code</p>';
   }
 }

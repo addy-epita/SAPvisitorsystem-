@@ -1,7 +1,13 @@
-import { t } from '../i18n.js';
 import { navigate } from '../router.js';
 import { supabase } from '../supabase.js';
-import { Html5Qrcode } from 'html5-qrcode';
+
+function formatTime(iso) {
+  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export function renderCheckout() {
   const app = document.getElementById('app');
@@ -16,223 +22,198 @@ export function renderCheckout() {
               </svg>
             </div>
             <div>
-              <h1 class="checkout-title-text">${t('checkout')}</h1>
-              <p class="checkout-subtitle-text">SAP Visitor Management</p>
+              <h1 class="checkout-title-text">Départ Visiteur</h1>
+              <p class="checkout-subtitle-text">Service Aviation Paris</p>
             </div>
           </div>
-          <a href="#/" class="checkout-back-btn">${t('back')}</a>
+          <a href="#/" class="checkout-back-btn">Retour</a>
         </header>
 
         <main class="checkout-main">
           <div class="glass-panel">
             <h2 class="glass-panel-title">
-              <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+              <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
-              ${t('scanQr')}
+              Rechercher votre visite
             </h2>
-            <p class="glass-panel-hint">${t('helpText')}</p>
+            <p class="glass-panel-hint">Saisissez votre nom de famille et la date de votre arrivée</p>
 
-            <div id="qrScanner" class="qr-scanner-container"></div>
-
-            <div class="scanner-controls">
-              <button id="startScanBtn" class="btn-scanner-control">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                ${t('startScanner')}
-              </button>
-              <button id="stopScanBtn" class="btn-scanner-control hidden">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
-                </svg>
-                ${t('stopScanner')}
-              </button>
-            </div>
-
-            <div id="scannerStatus" class="scanner-status hidden">
-              <div class="spinner-blue"></div>
-              <span>${t('processing')}</span>
-            </div>
-          </div>
-
-          <div class="checkout-divider">
-            <div class="divider-line"></div>
-            <span class="divider-text">${t('orManual')}</span>
-            <div class="divider-line"></div>
-          </div>
-
-          <div class="glass-panel">
-            <form id="manualCheckoutForm" class="checkout-form">
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label>${t('firstName')}</label>
-                  <input type="text" name="first_name" required class="checkout-input" placeholder="${t('firstName')}">
-                </div>
-                <div class="form-group">
-                  <label>${t('lastName')}</label>
-                  <input type="text" name="last_name" required class="checkout-input" placeholder="${t('lastName')}">
-                </div>
+            <form id="checkoutSearchForm" class="checkout-form" style="margin-top:20px;">
+              <div class="form-group">
+                <label class="checkout-form-label">Nom de famille *</label>
+                <input type="text" name="last_name" required class="checkout-input" placeholder="Votre nom de famille" autocomplete="family-name">
               </div>
               <div class="form-group">
-                <label>${t('company')}</label>
-                <input type="text" name="company" required class="checkout-input" placeholder="${t('company')}">
+                <label class="checkout-form-label">Date d'arrivée *</label>
+                <input type="date" name="arrival_date" required class="checkout-input" value="${todayISO()}" max="${todayISO()}">
               </div>
-              <button type="submit" class="btn-checkout-primary" id="checkoutBtn">
-                ${t('findVisit')}
+              <button type="submit" class="btn-checkout-primary" id="searchBtn">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                Rechercher
               </button>
             </form>
+
+            <div id="searchResults" class="hidden" style="margin-top:24px;"></div>
           </div>
         </main>
 
         <footer class="checkout-footer">
-          <p>SAP Visitor Management System</p>
+          <p>SAP — Service Aviation Paris</p>
         </footer>
       </div>
     </div>
   `;
 
-  let html5QrCode = null;
-  let isScanning = false;
-
-  const startScanBtn = document.getElementById('startScanBtn');
-  const stopScanBtn = document.getElementById('stopScanBtn');
-  const scannerStatus = document.getElementById('scannerStatus');
-
-  startScanBtn.addEventListener('click', async () => {
-    if (isScanning) return;
-
-    try {
-      html5QrCode = new Html5Qrcode('qrScanner');
-
-      await html5QrCode.start(
-        { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 }
-        },
-        async (decodedText) => {
-          if (isScanning) return;
-          isScanning = true;
-
-          scannerStatus.classList.remove('hidden');
-          scannerStatus.innerHTML = `
-            <div class="spinner-blue"></div>
-            <span>${t('qrDetected')}</span>
-          `;
-
-          await html5QrCode.stop();
-          stopScanBtn.classList.add('hidden');
-          startScanBtn.classList.remove('hidden');
-
-          await handleQRCheckout(decodedText);
-        }
-      );
-
-      startScanBtn.classList.add('hidden');
-      stopScanBtn.classList.remove('hidden');
-    } catch (error) {
-      console.error('Scanner error:', error);
-      alert(t('cameraError'));
-    }
-  });
-
-  stopScanBtn.addEventListener('click', async () => {
-    if (html5QrCode) {
-      await html5QrCode.stop();
-      stopScanBtn.classList.add('hidden');
-      startScanBtn.classList.remove('hidden');
-      scannerStatus.classList.add('hidden');
-      isScanning = false;
-    }
-  });
-
-  async function handleQRCheckout(qrToken) {
-    const { data: visitor, error } = await supabase
-      .from('visitors')
-      .select('id')
-      .eq('qr_token', qrToken)
-      .eq('status', 'checked_in')
-      .maybeSingle();
-
-    if (error || !visitor) {
-      scannerStatus.innerHTML = `<span style="color: #ef4444;">${t('visitorNotFound')}</span>`;
-      setTimeout(() => {
-        scannerStatus.classList.add('hidden');
-        isScanning = false;
-      }, 3000);
-      return;
-    }
-
-    const { error: updateError } = await supabase
-      .from('visitors')
-      .update({
-        status: 'checked_out',
-        departure_time: new Date().toISOString(),
-        checkout_method: 'qr_scan',
-      })
-      .eq('id', visitor.id);
-
-    if (updateError) {
-      scannerStatus.innerHTML = `<span style="color: #ef4444;">${t('errorMessage')}</span>`;
-      setTimeout(() => {
-        scannerStatus.classList.add('hidden');
-        isScanning = false;
-      }, 3000);
-      return;
-    }
-
-    navigate('/confirmation?type=checkout');
-  }
-
-  document.getElementById('manualCheckoutForm').addEventListener('submit', async (e) => {
+  document.getElementById('checkoutSearchForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const btn = document.getElementById('checkoutBtn');
-    const originalText = btn.textContent;
+    const btn = document.getElementById('searchBtn');
     btn.disabled = true;
-    btn.innerHTML = `<span class="spinner"></span> ${t('processing')}`;
+    btn.innerHTML = `<span class="spinner"></span> Recherche...`;
 
     const form = e.target;
-    const firstName = form.first_name.value.trim();
     const lastName = form.last_name.value.trim();
-    const company = form.company.value.trim();
+    const arrivalDate = form.arrival_date.value;
 
-    const { data: visitor, error } = await supabase
+    const dateStart = `${arrivalDate}T00:00:00.000Z`;
+    const dateEnd = `${arrivalDate}T23:59:59.999Z`;
+
+    const { data: visitors, error } = await supabase
       .from('visitors')
-      .select('id')
-      .ilike('first_name', firstName)
+      .select('id, first_name, last_name, company, phone, arrival_time, expected_duration, host_email, host_name')
       .ilike('last_name', lastName)
-      .ilike('company', company)
+      .gte('arrival_time', dateStart)
+      .lte('arrival_time', dateEnd)
       .eq('status', 'checked_in')
-      .order('arrival_time', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order('arrival_time', { ascending: false });
 
-    if (error || !visitor) {
-      alert(t('visitorNotFound'));
-      btn.disabled = false;
-      btn.textContent = originalText;
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg> Rechercher`;
+
+    const resultsEl = document.getElementById('searchResults');
+    resultsEl.classList.remove('hidden');
+
+    if (error || !visitors || visitors.length === 0) {
+      resultsEl.innerHTML = `
+        <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:16px; color:#991b1b; text-align:center;">
+          <strong>Aucune visite active trouvée.</strong><br>
+          <span style="font-size:0.9rem;">Vérifiez vos informations ou contactez la réception.</span>
+        </div>
+      `;
       return;
     }
 
-    const { error: updateError } = await supabase
-      .from('visitors')
-      .update({
-        status: 'checked_out',
-        departure_time: new Date().toISOString(),
-        checkout_method: 'manual_admin',
-      })
-      .eq('id', visitor.id);
-
-    if (updateError) {
-      alert(t('errorMessage'));
-      btn.disabled = false;
-      btn.textContent = originalText;
-      return;
+    if (visitors.length === 1) {
+      renderMatchConfirm(resultsEl, visitors[0]);
+    } else {
+      renderMatchList(resultsEl, visitors);
     }
-
-    navigate('/confirmation?type=checkout');
   });
+}
+
+function renderMatchConfirm(container, visitor) {
+  const arrivalFormatted = new Date(visitor.arrival_time).toLocaleDateString('fr-FR', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  }) + ' à ' + formatTime(visitor.arrival_time);
+
+  container.innerHTML = `
+    <div style="background:#f0f9ff; border:2px solid #1140A9; border-radius:8px; padding:20px;">
+      <p style="font-weight:700; color:#1140A9; margin-bottom:12px;">Visite trouvée — confirmez votre départ</p>
+      <div class="visit-match-item" style="background:white; margin-bottom:16px;">
+        <div class="visit-match-info">
+          <div class="visit-match-name">${visitor.first_name} ${visitor.last_name}</div>
+          <div class="visit-match-details">${visitor.company} · Arrivée ${arrivalFormatted}</div>
+          ${visitor.host_name ? `<div class="visit-match-details">Hôte : ${visitor.host_name}</div>` : ''}
+        </div>
+      </div>
+      <button id="confirmDepartureBtn" class="btn-checkout-primary" data-visitor-id="${visitor.id}" data-host-email="${visitor.host_email}" data-host-name="${visitor.host_name || ''}" data-visitor-name="${visitor.first_name} ${visitor.last_name}" data-company="${visitor.company}">
+        Confirmer le départ
+      </button>
+    </div>
+  `;
+
+  document.getElementById('confirmDepartureBtn').addEventListener('click', (ev) => {
+    const btn = ev.currentTarget;
+    performCheckout(btn.dataset.visitorId, btn.dataset.hostEmail, btn.dataset.hostName, btn.dataset.visitorName, btn.dataset.company, btn);
+  });
+}
+
+function renderMatchList(container, visitors) {
+  const items = visitors.map(v => {
+    const arrivalFormatted = new Date(v.arrival_time).toLocaleDateString('fr-FR', {
+      day: 'numeric', month: 'long',
+    }) + ' à ' + formatTime(v.arrival_time);
+
+    return `
+      <div class="visit-match-item">
+        <div class="visit-match-info">
+          <div class="visit-match-name">${v.first_name} ${v.last_name}</div>
+          <div class="visit-match-details">${v.company} · Arrivée ${arrivalFormatted}</div>
+          ${v.host_name ? `<div class="visit-match-details">Hôte : ${v.host_name}</div>` : ''}
+        </div>
+        <button class="btn-confirm-checkout" data-visitor-id="${v.id}" data-host-email="${v.host_email}" data-host-name="${v.host_name || ''}" data-visitor-name="${v.first_name} ${v.last_name}" data-company="${v.company}">
+          Confirmer le départ
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <p style="font-weight:700; color:#1140A9; margin-bottom:12px;">Plusieurs visites trouvées — sélectionnez la vôtre</p>
+    <div class="visit-match-list">${items}</div>
+  `;
+
+  container.querySelectorAll('.btn-confirm-checkout').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      const b = ev.currentTarget;
+      performCheckout(b.dataset.visitorId, b.dataset.hostEmail, b.dataset.hostName, b.dataset.visitorName, b.dataset.company, b);
+    });
+  });
+}
+
+async function performCheckout(visitorId, hostEmail, hostName, visitorName, company, btn) {
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span>`;
+
+  const { error } = await supabase
+    .from('visitors')
+    .update({
+      status: 'checked_out',
+      departure_time: new Date().toISOString(),
+      checkout_method: 'self_checkout',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', visitorId);
+
+  if (error) {
+    btn.disabled = false;
+    btn.textContent = 'Confirmer le départ';
+    alert('Une erreur s\'est produite. Veuillez réessayer.');
+    return;
+  }
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  fetch(`${supabaseUrl}/functions/v1/send-notification`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      visitor_id: parseInt(visitorId),
+      type: 'checkout',
+      visitor_name: visitorName,
+      company,
+      host_email: hostEmail,
+      host_name: hostName || hostEmail,
+      arrival_time: new Date().toISOString(),
+      departure_time: new Date().toISOString(),
+    }),
+  }).catch(err => console.error('Checkout notification error:', err));
+
+  navigate('/confirmation?type=checkout');
 }
