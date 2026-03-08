@@ -1,6 +1,7 @@
 import { getRouteParams } from '../router.js';
 import { supabase } from '../supabase.js';
 import QRCode from 'qrcode';
+import { isDemoMode } from '../demo.js';
 
 function formatDuration(minutes) {
   const hours = Math.floor(minutes / 60);
@@ -16,7 +17,13 @@ export async function renderConfirmation() {
   const visitorId = params.id;
 
   let visitor = null;
-  if (visitorId && type === 'checkin') {
+  if (params.demo === '1' && isDemoMode()) {
+    const stored = sessionStorage.getItem('sap_demo_visitor');
+    visitor = stored ? JSON.parse(stored) : null;
+    if (visitor && !visitor.qr_token) {
+      visitor.qr_token = 'demo_qr_preview';
+    }
+  } else if (visitorId && type === 'checkin') {
     const { data } = await supabase
       .from('visitors')
       .select('first_name, last_name, company, phone, qr_token, arrival_time, expected_duration')

@@ -1,5 +1,6 @@
 import { navigate } from '../router.js';
 import { supabase } from '../supabase.js';
+import { isDemoMode, DEMO_VISITOR } from '../demo.js';
 
 function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -73,6 +74,16 @@ export function renderCheckout() {
     btn.disabled = true;
     btn.innerHTML = `<span class="spinner"></span> Recherche...`;
 
+    const resultsEl = document.getElementById('searchResults');
+    resultsEl.classList.remove('hidden');
+
+    if (isDemoMode()) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg> Rechercher`;
+      renderMatchConfirm(resultsEl, DEMO_VISITOR);
+      return;
+    }
+
     const form = e.target;
     const lastName = form.last_name.value.trim();
     const arrivalDate = form.arrival_date.value;
@@ -91,9 +102,6 @@ export function renderCheckout() {
 
     btn.disabled = false;
     btn.innerHTML = `<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg> Rechercher`;
-
-    const resultsEl = document.getElementById('searchResults');
-    resultsEl.classList.remove('hidden');
 
     if (error || !visitors || visitors.length === 0) {
       resultsEl.innerHTML = `
@@ -176,6 +184,11 @@ function renderMatchList(container, visitors) {
 async function performCheckout(visitorId, hostEmail, hostName, visitorName, company, btn) {
   btn.disabled = true;
   btn.innerHTML = `<span class="spinner"></span>`;
+
+  if (isDemoMode()) {
+    navigate('/confirmation?type=checkout');
+    return;
+  }
 
   const { error } = await supabase
     .from('visitors')

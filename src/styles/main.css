@@ -1997,3 +1997,635 @@ a {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================
+   DEMO BANNER
+   ============================================ */
+
+.demo-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: #92400e;
+  color: #fef3c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.demo-banner-icon {
+  display: flex;
+  align-items: center;
+  opacity: 0.9;
+}
+
+.demo-banner-close {
+  margin-left: 16px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fef3c7;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.demo-banner-close:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+body:has(.demo-banner) {
+  padding-top: 38px;
+}
+
+.demo-form-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fffbeb;
+  border: 1px solid #fbbf24;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+}
+
+/* ============================================
+   HOME UTILITY ROW (Flow + Demo toggle)
+   ============================================ */
+
+.home-util-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.home-util-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.home-util-btn:hover {
+  transform: translateY(-1px);
+}
+
+.home-util-flow {
+  background: rgba(17,64,169,0.1);
+  color: var(--sap-blue);
+  border: 1px solid rgba(17,64,169,0.2);
+}
+
+.home-util-flow:hover {
+  background: rgba(17,64,169,0.16);
+}
+
+.home-util-demo {
+  background: rgba(0,0,0,0.05);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.home-util-demo:hover {
+  background: rgba(0,0,0,0.09);
+  color: var(--text-primary);
+}
+
+.home-util-demo-active {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fbbf24;
+}
+
+/* ============================================
+   FLOW PAGE
+   ============================================ */
+
+.flow-page {
+  min-height: 100vh;
+  background: var(--sap-gray);
+  padding-bottom: 80px;
+}
+
+.flow-page-header {
+  background: linear-gradient(135deg, var(--sap-blue-dark) 0%, var(--sap-blue) 100%);
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-md);
+}
+
+.flow-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255,255,255,0.85);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  text-decoration: none;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.flow-back-btn:hover {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+}
+
+.flow-page-title-block {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  justify-content: center;
+}
+
+.flow-page-logo {
+  background: white;
+  color: var(--sap-blue);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.flow-page-title {
+  color: white;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.flow-page-subtitle {
+  color: rgba(255,255,255,0.75);
+  font-size: 13px;
+  margin: 2px 0 0;
+}
+
+.flow-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.9);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.flow-print-btn:hover {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+/* Legend */
+
+.flow-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 14px 32px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.flow-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.flow-legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fld-visitor { background: #1a7a3a; }
+.fld-system  { background: #1140A9; }
+.fld-host    { background: #0e7490; }
+.fld-alert   { background: #dc2626; }
+
+/* Body */
+
+.flow-body {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 40px 24px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Phase Labels */
+
+.flow-phase-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 32px 0 20px;
+}
+
+.flow-phase-label::before,
+.flow-phase-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.flow-phase-badge {
+  background: var(--sap-blue);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.flow-phase-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Flow Nodes */
+
+.flow-node {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid transparent;
+  transition: box-shadow 0.2s, transform 0.2s;
+  position: relative;
+}
+
+.flow-node:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateX(3px);
+}
+
+.fn-visitor  { border-left-color: #1a7a3a; }
+.fn-system   { border-left-color: var(--sap-blue); }
+.fn-host     { border-left-color: #0e7490; }
+.fn-alert    { border-left-color: #dc2626; background: #fff5f5; }
+.fn-warning  { border-left-color: #d97706; background: #fffbeb; }
+
+.fn-num {
+  background: var(--sap-gray);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fn-visitor  .fn-num { background: #dcfce7; color: #166534; }
+.fn-system   .fn-num { background: #dbeafe; color: #1e40af; }
+.fn-host     .fn-num { background: #cffafe; color: #155e75; }
+.fn-alert    .fn-num { background: #fee2e2; color: #991b1b; }
+.fn-warning  .fn-num { background: #fef3c7; color: #92400e; }
+
+.fn-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fn-icon-visitor { background: #dcfce7; color: #166534; }
+.fn-icon-system  { background: #dbeafe; color: #1e40af; }
+.fn-icon-host    { background: #cffafe; color: #155e75; }
+.fn-icon-alert   { background: #fee2e2; color: #991b1b; }
+.fn-icon-warning { background: #fef3c7; color: #92400e; }
+
+.fn-body {
+  flex: 1;
+}
+
+.fn-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.fn-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.fn-actor-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.fn-tag-visitor { background: #dcfce7; color: #166534; }
+.fn-tag-system  { background: #dbeafe; color: #1e40af; }
+.fn-tag-host    { background: #cffafe; color: #155e75; }
+.fn-tag-alert   { background: #fee2e2; color: #991b1b; }
+
+/* Connectors */
+
+.flow-connector {
+  width: 2px;
+  height: 32px;
+  background: linear-gradient(to bottom, var(--border), var(--sap-blue));
+  position: relative;
+  margin: 0;
+}
+
+.flow-connector::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--sap-blue);
+}
+
+.flow-connector-long {
+  height: 40px;
+}
+
+/* Split / Decision Section */
+
+.flow-split-container {
+  width: 100%;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.flow-split-header {
+  padding: 16px 20px;
+  background: #f8faff;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+}
+
+.flow-decision-diamond {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--sap-blue);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 32px;
+  box-shadow: 0 2px 8px rgba(17,64,169,0.25);
+}
+
+.flow-split-tracks {
+  display: grid;
+  grid-template-columns: 1fr 2px 1fr;
+}
+
+.flow-split-divider {
+  background: var(--border);
+}
+
+.flow-track {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.flow-track-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.flow-track-label-green {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.flow-track-label-orange {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.flow-track-node {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--sap-gray);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  border-left: 3px solid transparent;
+}
+
+.fn-compact .fn-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+}
+
+.fn-compact .fn-title {
+  font-size: 14px;
+}
+
+.fn-compact .fn-desc {
+  font-size: 12px;
+}
+
+.flow-track-arrow {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 20px;
+  line-height: 1;
+  margin: 6px 0;
+}
+
+/* Footer Note */
+
+.flow-footer-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 36px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  width: 100%;
+  box-shadow: var(--shadow-sm);
+}
+
+.flow-footer-note svg {
+  flex-shrink: 0;
+  color: var(--sap-blue);
+}
+
+/* ============================================
+   FLOW PAGE — RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .flow-page-header {
+    padding: 14px 16px;
+    flex-wrap: wrap;
+  }
+
+  .flow-page-title {
+    font-size: 16px;
+  }
+
+  .flow-page-subtitle {
+    display: none;
+  }
+
+  .flow-body {
+    padding: 24px 12px 60px;
+  }
+
+  .flow-split-tracks {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1px auto;
+  }
+
+  .flow-split-divider {
+    height: 1px;
+  }
+
+  .flow-legend {
+    gap: 14px;
+    padding: 12px 16px;
+  }
+
+  .fn-actor-tag {
+    display: none;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  body {
+    background: white;
+    padding-top: 0 !important;
+  }
+
+  .demo-banner,
+  .admin-link,
+  .kiosk-footer,
+  .flow-back-btn,
+  .flow-print-btn {
+    display: none !important;
+  }
+
+  .flow-page-header {
+    position: static;
+    background: white;
+    color: black;
+    border-bottom: 2px solid black;
+    box-shadow: none;
+  }
+
+  .flow-page-logo {
+    background: black;
+    color: white;
+  }
+
+  .flow-page-title,
+  .flow-page-subtitle {
+    color: black;
+  }
+
+  .flow-node,
+  .flow-split-container,
+  .flow-track-node {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    break-inside: avoid;
+  }
+
+  .flow-phase-label {
+    break-before: auto;
+  }
+}

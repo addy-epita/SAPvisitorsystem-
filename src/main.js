@@ -6,6 +6,8 @@ import { renderCheckout } from './pages/checkout.js';
 import { renderConfirmation } from './pages/confirmation.js';
 import { renderConfirmAction } from './pages/confirm-action.js';
 import { renderAdmin } from './pages/admin.js';
+import { renderFlow } from './pages/flow.js';
+import { updateDemoBanner } from './demo.js';
 
 function renderLayout() {
   const footer = document.createElement('div');
@@ -48,6 +50,8 @@ registerRoute('/checkout', () => renderCheckout());
 registerRoute('/confirmation', () => renderConfirmation());
 registerRoute('/confirm-action', () => renderConfirmAction());
 registerRoute('/admin', () => renderAdmin());
+registerRoute('/flow', () => renderFlow());
 
 renderLayout();
+updateDemoBanner();
 startRouter();

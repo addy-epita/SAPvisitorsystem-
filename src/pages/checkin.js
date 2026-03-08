@@ -1,14 +1,19 @@
 import { navigate } from '../router.js';
 import { supabase } from '../supabase.js';
+import { isDemoMode, DEMO_VISITOR, DEMO_HOSTS } from '../demo.js';
 
 export async function renderCheckin() {
-  const { data: hosts } = await supabase
-    .from('hosts')
-    .select('id, name, email, department')
-    .eq('is_active', true)
-    .order('name');
-
-  const hostList = hosts || [];
+  let hostList;
+  if (isDemoMode()) {
+    hostList = DEMO_HOSTS;
+  } else {
+    const { data: hosts } = await supabase
+      .from('hosts')
+      .select('id, name, email, department')
+      .eq('is_active', true)
+      .order('name');
+    hostList = hosts || [];
+  }
 
   const durations = [
     { value: 120, label: '2 heures' },
@@ -104,6 +109,33 @@ export async function renderCheckin() {
   const hostSelect = document.getElementById('hostSelect');
   const hostEmailInput = document.getElementById('hostEmail');
 
+  if (isDemoMode()) {
+    const form = document.getElementById('checkinForm');
+    form.first_name.value = DEMO_VISITOR.first_name;
+    form.last_name.value = DEMO_VISITOR.last_name;
+    form.company.value = DEMO_VISITOR.company;
+    form.phone.value = DEMO_VISITOR.phone;
+    form.reason.value = DEMO_VISITOR.reason;
+    form.visitor_email.value = DEMO_VISITOR.visitor_email;
+    if (hostSelect.options.length > 1) {
+      hostSelect.selectedIndex = 1;
+      const opt = hostSelect.selectedOptions[0];
+      hostEmailInput.value = opt.dataset.email || DEMO_VISITOR.host_email;
+      hostEmailInput.readOnly = true;
+    }
+
+    const demoBadge = document.createElement('div');
+    demoBadge.className = 'demo-form-notice';
+    demoBadge.innerHTML = `
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      Formulaire pré-rempli avec des données de démonstration
+    `;
+    form.insertBefore(demoBadge, form.firstChild);
+  }
+
   hostSelect.addEventListener('change', () => {
     const selected = hostSelect.selectedOptions[0];
     if (selected && selected.dataset.email) {
@@ -122,12 +154,31 @@ export async function renderCheckin() {
     btn.innerHTML = `<span class="spinner"></span> Traitement en cours...`;
 
     const form = e.target;
-    const qrToken = crypto.randomUUID().replace(/-/g, '').slice(0, 32);
-
     const selectedHost = hostSelect.selectedOptions[0];
     const hostName = selectedHost?.value && selectedHost.value !== 'other' && selectedHost.value !== ''
       ? (selectedHost.dataset.name || selectedHost.textContent.split('(')[0].trim())
       : '';
+
+    if (isDemoMode()) {
+      const demoVisitor = {
+        ...DEMO_VISITOR,
+        first_name: form.first_name.value.trim(),
+        last_name: form.last_name.value.trim(),
+        company: form.company.value.trim(),
+        phone: form.phone.value.trim(),
+        reason: form.reason.value.trim(),
+        host_email: form.host_email.value.trim(),
+        host_name: hostName,
+        visitor_email: form.visitor_email.value.trim() || null,
+        expected_duration: parseInt(form.expected_duration.value),
+        arrival_time: new Date().toISOString(),
+      };
+      sessionStorage.setItem('sap_demo_visitor', JSON.stringify(demoVisitor));
+      navigate(`/confirmation?type=checkin&demo=1`);
+      return;
+    }
+
+    const qrToken = crypto.randomUUID().replace(/-/g, '').slice(0, 32);
 
     const { data, error } = await supabase.from('visitors').insert({
       first_name: form.first_name.value.trim(),
