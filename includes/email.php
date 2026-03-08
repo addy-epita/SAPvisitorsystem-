@@ -15,6 +15,8 @@ class EmailService
     private string $baseUrl;
     private array $settings;
 
+    private string $testEmailOverride;
+
     // SAP Brand Colors
     private const SAP_BLUE = '#008FD3';
     private const SAP_DARK_BLUE = '#0070A0';
@@ -42,6 +44,8 @@ class EmailService
             $config['app_password'],
             $config['from_name'] ?? 'SAP Visitor System'
         );
+
+        $this->testEmailOverride = defined('TEST_EMAIL_OVERRIDE') ? TEST_EMAIL_OVERRIDE : '';
 
         // Load settings
         $this->settings = $this->loadSettings();
@@ -95,7 +99,7 @@ class EmailService
             $htmlBody = $this->getArrivalEmailTemplate($visitor, $actionToken);
 
             $result = $this->gmailClient->sendEmail(
-                $visitor['host_email'],
+                $this->resolveEmail($visitor['host_email']),
                 $visitor['host_name'] ?? '',
                 $subject,
                 $htmlBody
@@ -130,7 +134,7 @@ class EmailService
             $htmlBody = $this->getReminderEmailTemplate($visitor, $duration, $actionToken);
 
             $result = $this->gmailClient->sendEmail(
-                $visitor['host_email'],
+                $this->resolveEmail($visitor['host_email']),
                 $visitor['host_name'] ?? '',
                 $subject,
                 $htmlBody
@@ -163,7 +167,7 @@ class EmailService
             $recipients = [];
             foreach ($supervisors as $supervisor) {
                 $recipients[] = [
-                    'email' => is_array($supervisor) ? $supervisor['email'] : $supervisor,
+                    'email' => $this->resolveEmail(is_array($supervisor) ? $supervisor['email'] : $supervisor),
                     'name' => is_array($supervisor) ? ($supervisor['name'] ?? '') : ''
                 ];
             }
@@ -224,7 +228,7 @@ class EmailService
             $htmlBody = $this->getCheckoutEmailTemplate($visitor, $includeEvacuation);
 
             $result = $this->gmailClient->sendEmail(
-                $visitor['visitor_email'],
+                $this->resolveEmail($visitor['visitor_email']),
                 $visitor['first_name'] . ' ' . $visitor['last_name'],
                 $subject,
                 $htmlBody
@@ -239,6 +243,14 @@ class EmailService
             $this->logNotification($visitor['id'], 'checkout', $visitor['visitor_email'], 'failed');
             return false;
         }
+    }
+
+    /**
+     * Resolve the actual recipient email, applying test override if configured
+     */
+    private function resolveEmail(string $email): string
+    {
+        return !empty($this->testEmailOverride) ? $this->testEmailOverride : $email;
     }
 
     /**

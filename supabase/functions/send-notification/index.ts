@@ -32,10 +32,13 @@ Deno.serve(async (req: Request) => {
   try {
     const payload: NotificationRequest = await req.json();
 
-    const gmailUser     = Deno.env.get('GMAIL_FROM_EMAIL');
-    const gmailPassword = Deno.env.get('GMAIL_APP_PASSWORD');
-    const fromName      = Deno.env.get('GMAIL_FROM_NAME') || 'SAP Visitor System';
-    const baseUrl       = Deno.env.get('BASE_URL') || 'https://sapformations.com';
+    const gmailUser         = Deno.env.get('GMAIL_FROM_EMAIL');
+    const gmailPassword     = Deno.env.get('GMAIL_APP_PASSWORD');
+    const fromName          = Deno.env.get('GMAIL_FROM_NAME') || 'SAP Visitor System';
+    const baseUrl           = Deno.env.get('BASE_URL') || 'https://sapformations.com';
+    const testEmailOverride = Deno.env.get('TEST_EMAIL_OVERRIDE') || '';
+
+    const resolveEmail = (email: string) => testEmailOverride || email;
 
     if (!gmailUser || !gmailPassword) {
       throw new Error('Identifiants Gmail non configurés (GMAIL_FROM_EMAIL / GMAIL_APP_PASSWORD)');
@@ -52,7 +55,7 @@ Deno.serve(async (req: Request) => {
 
     await transporter.sendMail({
       from: `"${fromName}" <${gmailUser}>`,
-      to: payload.host_email,
+      to: resolveEmail(payload.host_email),
       subject: emailContent.subject,
       html: emailContent.body,
     });
@@ -73,7 +76,7 @@ Deno.serve(async (req: Request) => {
         for (const email of safetyEmails) {
           await transporter.sendMail({
             from: `"${fromName}" <${gmailUser}>`,
-            to: email,
+            to: resolveEmail(email),
             subject: emailContent.subject,
             html: emailContent.body,
           });

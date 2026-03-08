@@ -74,6 +74,7 @@ define('LOGIN_LOCKOUT_TIME', 900); // 15 minutes
 
 // Email Settings
 define('EMAIL_ENABLED', filter_var($_ENV['EMAIL_ENABLED'] ?? 'true', FILTER_VALIDATE_BOOLEAN));
+define('TEST_EMAIL_OVERRIDE', $_ENV['TEST_EMAIL_OVERRIDE'] ?? '');
 define('REMINDER_INTERVALS', [120, 240, 360, 480]); // Minutes: 2h, 4h, 6h, 8h
 define('END_OF_DAY_TIME', '18:00');
 define('ESCALATION_EMAILS', $_ENV['ESCALATION_EMAILS'] ?? ''); // Comma-separated list
