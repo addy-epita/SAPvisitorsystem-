@@ -17,13 +17,11 @@ if (php_sapi_name() !== 'cli') {
 
 $db = new Database();
 
-// Initialize email service with proper configuration
+// Initialize email service with Gmail SMTP configuration
 $emailConfig = [
-    'tenant_id' => MS_GRAPH_TENANT_ID,
-    'client_id' => MS_GRAPH_CLIENT_ID,
-    'client_secret' => MS_GRAPH_CLIENT_SECRET,
-    'from_email' => MS_GRAPH_FROM_EMAIL,
-    'from_name' => MS_GRAPH_FROM_NAME
+    'from_email'   => GMAIL_FROM_EMAIL,
+    'app_password' => GMAIL_APP_PASSWORD,
+    'from_name'    => GMAIL_FROM_NAME,
 ];
 
 $emailService = new EmailService($db->getPdo(), $emailConfig, BASE_URL);

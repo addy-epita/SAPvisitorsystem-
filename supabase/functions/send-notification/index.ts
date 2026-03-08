@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import nodemailer from "npm:nodemailer@6";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,23 +32,30 @@ Deno.serve(async (req: Request) => {
   try {
     const payload: NotificationRequest = await req.json();
 
-    const clientId = Deno.env.get('MICROSOFT_CLIENT_ID');
-    const tenantId = Deno.env.get('MICROSOFT_TENANT_ID');
-    const clientSecret = Deno.env.get('MICROSOFT_CLIENT_SECRET');
-    const fromEmail = Deno.env.get('FROM_EMAIL') || 'noreply@sapformations.com';
-    const baseUrl = Deno.env.get('BASE_URL') || 'https://sapformations.com';
+    const gmailUser     = Deno.env.get('GMAIL_FROM_EMAIL');
+    const gmailPassword = Deno.env.get('GMAIL_APP_PASSWORD');
+    const fromName      = Deno.env.get('GMAIL_FROM_NAME') || 'SAP Visitor System';
+    const baseUrl       = Deno.env.get('BASE_URL') || 'https://sapformations.com';
 
-    if (!clientId || !tenantId || !clientSecret) {
-      throw new Error('Identifiants Microsoft Graph API non configurés');
+    if (!gmailUser || !gmailPassword) {
+      throw new Error('Identifiants Gmail non configurés (GMAIL_FROM_EMAIL / GMAIL_APP_PASSWORD)');
     }
 
-    const accessToken = await getMsAccessToken(tenantId, clientId, clientSecret);
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: { user: gmailUser, pass: gmailPassword },
+    });
 
     const emailContent = buildEmailContent(payload, baseUrl);
 
-    const recipients = [{ emailAddress: { address: payload.host_email } }];
-
-    await sendEmail(accessToken, fromEmail, emailContent.subject, emailContent.body, recipients);
+    await transporter.sendMail({
+      from: `"${fromName}" <${gmailUser}>`,
+      to: payload.host_email,
+      subject: emailContent.subject,
+      html: emailContent.body,
+    });
 
     if (payload.type === 'arrival' || payload.type === 'checkout') {
       const supabase = createClient(
@@ -63,8 +71,12 @@ Deno.serve(async (req: Request) => {
       if (safetySetting?.setting_value) {
         const safetyEmails: string[] = JSON.parse(safetySetting.setting_value);
         for (const email of safetyEmails) {
-          const safetyRecipients = [{ emailAddress: { address: email } }];
-          await sendEmail(accessToken, fromEmail, emailContent.subject, emailContent.body, safetyRecipients);
+          await transporter.sendMail({
+            from: `"${fromName}" <${gmailUser}>`,
+            to: email,
+            subject: emailContent.subject,
+            html: emailContent.body,
+          });
         }
       }
     }
@@ -81,56 +93,6 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
-
-async function getMsAccessToken(tenantId: string, clientId: string, clientSecret: string): Promise<string> {
-  const response = await fetch(
-    `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        scope: 'https://graph.microsoft.com/.default',
-        grant_type: 'client_credentials',
-      }),
-    }
-  );
-  if (!response.ok) throw new Error("Échec d'obtention du token Microsoft");
-  const { access_token } = await response.json();
-  return access_token;
-}
-
-async function sendEmail(
-  accessToken: string,
-  fromEmail: string,
-  subject: string,
-  body: string,
-  recipients: Array<{ emailAddress: { address: string } }>
-) {
-  const response = await fetch(
-    `https://graph.microsoft.com/v1.0/users/${fromEmail}/sendMail`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: {
-          subject,
-          body: { contentType: 'HTML', content: body },
-          toRecipients: recipients,
-        },
-        saveToSentItems: true,
-      }),
-    }
-  );
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Échec envoi email: ${err}`);
-  }
-}
 
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString('fr-FR', {
@@ -155,9 +117,8 @@ function emailBase(headerColor: string, headerTitle: string, body: string): stri
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Source Sans Pro', Arial, sans-serif; background: #F5F5F5; color: #333; }
+  body { font-family: Arial, sans-serif; background: #F5F5F5; color: #333; }
   .wrap { max-width: 600px; margin: 32px auto; background: white; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
   .header { background: ${headerColor}; color: white; padding: 28px 32px; }
   .header-logo { font-size: 22px; font-weight: 700; letter-spacing: 2px; margin-bottom: 6px; }
@@ -169,10 +130,9 @@ function emailBase(headerColor: string, headerTitle: string, body: string): stri
   .info-label { font-weight: 600; color: #555; min-width: 120px; }
   .info-value { color: #222; }
   .btn-row { text-align: center; margin: 28px 0; }
-  .btn { display: inline-block; padding: 13px 28px; margin: 6px 8px; text-decoration: none; border-radius: 4px; font-weight: 700; font-size: 16px; letter-spacing: 0.3px; }
+  .btn { display: inline-block; padding: 13px 28px; margin: 6px 8px; text-decoration: none; border-radius: 4px; font-weight: 700; font-size: 16px; }
   .btn-green { background: #107E3E; color: white; }
   .btn-blue { background: #1140A9; color: white; }
-  .btn-gray { background: #9197A4; color: white; }
   .note { font-size: 13px; color: #888; text-align: center; margin-top: 16px; }
   .footer { background: #F5F5F5; text-align: center; padding: 20px 32px; font-size: 13px; color: #9197A4; border-top: 1px solid #e8e8e8; }
   p { margin-bottom: 12px; line-height: 1.6; }
@@ -196,7 +156,7 @@ function emailBase(headerColor: string, headerTitle: string, body: string): stri
 }
 
 function buildEmailContent(payload: NotificationRequest, baseUrl: string): { subject: string; body: string } {
-  const confirmPresentUrl = `${baseUrl}/#/confirm-action?token=${payload.action_token}&action=present`;
+  const confirmPresentUrl  = `${baseUrl}/#/confirm-action?token=${payload.action_token}&action=present`;
   const confirmDepartedUrl = `${baseUrl}/#/confirm-action?token=${payload.action_token}&action=departed`;
 
   switch (payload.type) {
@@ -234,7 +194,7 @@ function buildEmailContent(payload: NotificationRequest, baseUrl: string): { sub
           <a href="${confirmPresentUrl}" class="btn btn-green">Toujours sur site</a>
           <a href="${confirmDepartedUrl}" class="btn btn-blue">Il est parti</a>
         </div>
-        <p class="note">Ces liens sont valides 24 heures. Sans réponse de votre part dans 1 heure, un rappel vous sera envoyé.</p>
+        <p class="note">Ces liens sont valides 24 heures.</p>
       `);
       return { subject, body };
     }
@@ -297,16 +257,16 @@ function buildEmailContent(payload: NotificationRequest, baseUrl: string): { sub
       const body = emailBase('#BB0000', 'Escalade — Visiteurs Non Confirmés', `
         <p>Bonjour,</p>
         <div class="danger-badge">Escalade Sécurité — ${new Date().toLocaleDateString('fr-FR')}</div>
-        <p>Les visiteurs suivants sont toujours enregistrés comme présents sur site à 22h00 sans confirmation de leur hôte. Une vérification physique est requise.</p>
+        <p>Les visiteurs suivants sont toujours enregistrés comme présents sans confirmation de leur hôte.</p>
         <table style="width:100%; border-collapse:collapse; margin:20px 0; font-size:14px;">
           <thead>
             <tr style="background:#F5F5F5;">
-              <th style="padding:10px 12px; text-align:left; font-weight:700; color:#333; border-bottom:2px solid #ddd;">Visiteur</th>
-              <th style="padding:10px 12px; text-align:left; font-weight:700; color:#333; border-bottom:2px solid #ddd;">Société</th>
-              <th style="padding:10px 12px; text-align:left; font-weight:700; color:#333; border-bottom:2px solid #ddd;">Téléphone</th>
-              <th style="padding:10px 12px; text-align:left; font-weight:700; color:#333; border-bottom:2px solid #ddd;">Hôte</th>
-              <th style="padding:10px 12px; text-align:left; font-weight:700; color:#333; border-bottom:2px solid #ddd;">Arrivée</th>
-              <th style="padding:10px 12px; text-align:left; font-weight:700; color:#333; border-bottom:2px solid #ddd;">Sur site</th>
+              <th style="padding:10px 12px; text-align:left; border-bottom:2px solid #ddd;">Visiteur</th>
+              <th style="padding:10px 12px; text-align:left; border-bottom:2px solid #ddd;">Société</th>
+              <th style="padding:10px 12px; text-align:left; border-bottom:2px solid #ddd;">Téléphone</th>
+              <th style="padding:10px 12px; text-align:left; border-bottom:2px solid #ddd;">Hôte</th>
+              <th style="padding:10px 12px; text-align:left; border-bottom:2px solid #ddd;">Arrivée</th>
+              <th style="padding:10px 12px; text-align:left; border-bottom:2px solid #ddd;">Sur site</th>
             </tr>
           </thead>
           <tbody>${visitorRows}</tbody>
@@ -318,7 +278,7 @@ function buildEmailContent(payload: NotificationRequest, baseUrl: string): { sub
 
     case 'checkout': {
       const subject = `[DÉPART] ${payload.visitor_name} — ${payload.company}`;
-      const confirmedByLabel = payload.confirmed_by === 'host' ? 'Confirmé par l\'hôte' : 'Auto-enregistrement';
+      const confirmedByLabel = payload.confirmed_by === 'host' ? "Confirmé par l'hôte" : 'Auto-enregistrement';
       const body = emailBase('#1140A9', 'Visiteur Parti', `
         <p>Bonjour <strong>${payload.host_name}</strong>,</p>
         <p>Le départ de votre visiteur a été enregistré.</p>

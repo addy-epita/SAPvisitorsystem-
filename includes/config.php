@@ -38,13 +38,12 @@ define('DB_USER', $_ENV['DB_USER'] ?? 'visitor_user');
 define('DB_PASS', $_ENV['DB_PASS'] ?? 'your_secure_password');
 define('DB_CHARSET', 'utf8mb4');
 
-// Microsoft Graph API Configuration
-// These should be set via environment variables for security
-define('MS_GRAPH_TENANT_ID', $_ENV['MS_GRAPH_TENANT_ID'] ?? '');
-define('MS_GRAPH_CLIENT_ID', $_ENV['MS_GRAPH_CLIENT_ID'] ?? '');
-define('MS_GRAPH_CLIENT_SECRET', $_ENV['MS_GRAPH_CLIENT_SECRET'] ?? '');
-define('MS_GRAPH_FROM_EMAIL', $_ENV['MS_GRAPH_FROM_EMAIL'] ?? 'visitors@yourdomain.com');
-define('MS_GRAPH_FROM_NAME', $_ENV['MS_GRAPH_FROM_NAME'] ?? 'SAP Visitor System');
+// Gmail SMTP Configuration
+// Requires Gmail account with 2FA enabled and an App Password generated at:
+// https://myaccount.google.com/apppasswords
+define('GMAIL_FROM_EMAIL',   $_ENV['GMAIL_FROM_EMAIL']   ?? '');
+define('GMAIL_APP_PASSWORD', $_ENV['GMAIL_APP_PASSWORD'] ?? '');
+define('GMAIL_FROM_NAME',    $_ENV['GMAIL_FROM_NAME']    ?? 'SAP Visitor System');
 
 // Auto-detect base URL from request
 function getBaseUrl() {

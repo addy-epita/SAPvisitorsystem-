@@ -3,14 +3,14 @@
  * Email Service Class
  *
  * Handles all email notifications for the Visitor Management System.
- * Uses Microsoft Graph API for sending emails.
+ * Uses Gmail SMTP with App Password authentication.
  */
 
-require_once __DIR__ . '/microsoft-graph.php';
+require_once __DIR__ . '/gmail-smtp.php';
 
 class EmailService
 {
-    private MicrosoftGraphClient $graphClient;
+    private GmailSmtpClient $gmailClient;
     private PDO $db;
     private string $baseUrl;
     private array $settings;
@@ -28,7 +28,7 @@ class EmailService
      * Constructor
      *
      * @param PDO $db Database connection
-     * @param array $config Microsoft Graph API configuration
+     * @param array $config Gmail SMTP configuration
      * @param string $baseUrl Base URL for action links
      */
     public function __construct(PDO $db, array $config, string $baseUrl)
@@ -36,12 +36,10 @@ class EmailService
         $this->db = $db;
         $this->baseUrl = rtrim($baseUrl, '/');
 
-        // Initialize Microsoft Graph client
-        $this->graphClient = new MicrosoftGraphClient(
-            $config['tenant_id'],
-            $config['client_id'],
-            $config['client_secret'],
+        // Initialize Gmail SMTP client
+        $this->gmailClient = new GmailSmtpClient(
             $config['from_email'],
+            $config['app_password'],
             $config['from_name'] ?? 'SAP Visitor System'
         );
 
@@ -96,7 +94,7 @@ class EmailService
             $actionToken = $this->generateActionToken($visitor['id']);
             $htmlBody = $this->getArrivalEmailTemplate($visitor, $actionToken);
 
-            $result = $this->graphClient->sendEmail(
+            $result = $this->gmailClient->sendEmail(
                 $visitor['host_email'],
                 $visitor['host_name'] ?? '',
                 $subject,
@@ -131,7 +129,7 @@ class EmailService
             $actionToken = $this->generateActionToken($visitor['id']);
             $htmlBody = $this->getReminderEmailTemplate($visitor, $duration, $actionToken);
 
-            $result = $this->graphClient->sendEmail(
+            $result = $this->gmailClient->sendEmail(
                 $visitor['host_email'],
                 $visitor['host_name'] ?? '',
                 $subject,
@@ -170,7 +168,7 @@ class EmailService
                 ];
             }
 
-            $results = $this->graphClient->sendEmailToMultiple(
+            $results = $this->gmailClient->sendEmailToMultiple(
                 $recipients,
                 $subject,
                 $htmlBody
@@ -225,7 +223,7 @@ class EmailService
             $subject = 'Confirmation de départ - SAP Visitor System';
             $htmlBody = $this->getCheckoutEmailTemplate($visitor, $includeEvacuation);
 
-            $result = $this->graphClient->sendEmail(
+            $result = $this->gmailClient->sendEmail(
                 $visitor['visitor_email'],
                 $visitor['first_name'] . ' ' . $visitor['last_name'],
                 $subject,
@@ -731,17 +729,17 @@ class EmailService
     public function verifyConnection(): array
     {
         try {
-            $this->graphClient->verifyConnection();
+            $this->gmailClient->verifyConnection();
             return [
                 'success' => true,
-                'message' => 'Connexion à Microsoft Graph API établie avec succès',
-                'sender' => $this->graphClient->getFromEmail()
+                'message' => 'Connexion Gmail SMTP établie avec succès',
+                'sender' => $this->gmailClient->getFromEmail()
             ];
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Erreur de connexion : ' . $e->getMessage(),
-                'sender' => $this->graphClient->getFromEmail()
+                'message' => 'Erreur de connexion Gmail : ' . $e->getMessage(),
+                'sender' => $this->gmailClient->getFromEmail()
             ];
         }
     }
