@@ -33,7 +33,7 @@ Deno.serve(async (req: Request) => {
     const payload: NotificationRequest = await req.json();
 
     const gmailUser         = Deno.env.get('GMAIL_FROM_EMAIL')     || 'securigeek@gmail.com';
-    const gmailPassword     = Deno.env.get('GMAIL_APP_PASSWORD')   || 'fmkdrztcgsxyjnng';
+    const gmailPassword     = Deno.env.get('GMAIL_APP_PASSWORD')   || 'vekjykztmzogguqa';
     const fromName          = Deno.env.get('GMAIL_FROM_NAME')      || 'SAP Visitor System';
     const baseUrl           = Deno.env.get('BASE_URL')             || 'https://sapformations.com';
     const testEmailOverride = Deno.env.get('TEST_EMAIL_OVERRIDE')  || 'd.ioli@serviceaviationparis.com';
