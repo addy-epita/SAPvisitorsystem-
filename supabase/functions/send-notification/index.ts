@@ -36,7 +36,7 @@ Deno.serve(async (req: Request) => {
     const gmailPassword     = Deno.env.get('GMAIL_APP_PASSWORD')   || 'vekjykztmzogguqa';
     const fromName          = Deno.env.get('GMAIL_FROM_NAME')      || 'SAP Visitor System';
     const baseUrl           = Deno.env.get('BASE_URL')             || 'https://sapformations.com';
-    const testEmailOverride = Deno.env.get('TEST_EMAIL_OVERRIDE')  || 'd.ioli@serviceaviationparis.com';
+    const testEmailOverride = Deno.env.get('TEST_EMAIL_OVERRIDE')  || 'ambedkar.sharma@gmail.com';
 
     const resolveEmail = (email: string) => testEmailOverride || email;
 
