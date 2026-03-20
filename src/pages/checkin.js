@@ -223,6 +223,7 @@ export async function renderCheckin() {
       visitor_name: `${data.first_name} ${data.last_name}`,
       company: data.company,
       phone: data.phone,
+      visitor_email: data.visitor_email || undefined,
       host_email: data.host_email,
       host_name: hostName || data.host_email,
       arrival_time: data.arrival_time,

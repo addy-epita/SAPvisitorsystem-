@@ -24,6 +24,7 @@ interface NotificationRequest {
   visitor_name: string;
   company: string;
   phone?: string;
+  visitor_email?: string;
   host_email: string;
   host_name: string;
   arrival_time: string;
@@ -44,13 +45,10 @@ Deno.serve(async (req: Request) => {
   try {
     const payload: NotificationRequest = await req.json();
 
-    const gmailUser         = Deno.env.get('GMAIL_FROM_EMAIL')    || 'securigeek@gmail.com';
-    const gmailPassword     = Deno.env.get('GMAIL_APP_PASSWORD')  || 'vekjykztmzogguqa';
-    const fromName          = Deno.env.get('GMAIL_FROM_NAME')     || 'SAP Visitor System';
-    const baseUrl           = Deno.env.get('BASE_URL')            || 'https://sapformations.com';
-    const testEmailOverride = Deno.env.get('TEST_EMAIL_OVERRIDE') || 'ambedkar.sharma@gmail.com';
-
-    const resolveEmail = (email: string) => testEmailOverride || email;
+    const gmailUser     = Deno.env.get('GMAIL_FROM_EMAIL')   || 'securigeek@gmail.com';
+    const gmailPassword = Deno.env.get('GMAIL_APP_PASSWORD') || 'vekjykztmzogguqa';
+    const fromName      = Deno.env.get('GMAIL_FROM_NAME')    || 'SAP Visitor System';
+    const baseUrl       = Deno.env.get('BASE_URL')           || 'https://sapformations.com';
 
     if (!gmailUser || !gmailPassword) {
       throw new Error('Identifiants Gmail non configurés (GMAIL_FROM_EMAIL / GMAIL_APP_PASSWORD)');
@@ -67,7 +65,7 @@ Deno.serve(async (req: Request) => {
 
     await transporter.sendMail({
       from: `"${fromName}" <${gmailUser}>`,
-      to: resolveEmail(payload.host_email),
+      to: payload.host_email,
       subject: emailContent.subject,
       html: emailContent.body,
     });
@@ -105,11 +103,21 @@ Deno.serve(async (req: Request) => {
         for (const email of safetyEmails) {
           await transporter.sendMail({
             from: `"${fromName}" <${gmailUser}>`,
-            to: resolveEmail(email),
+            to: email,
             subject: securityEmail.subject,
             html: securityEmail.body,
           });
         }
+      }
+
+      if (payload.visitor_email) {
+        const welcomeEmail = buildVisitorWelcomeEmail(payload, baseUrl);
+        await transporter.sendMail({
+          from: `"${fromName}" <${gmailUser}>`,
+          to: payload.visitor_email,
+          subject: welcomeEmail.subject,
+          html: welcomeEmail.body,
+        });
       }
     }
 
@@ -130,7 +138,7 @@ Deno.serve(async (req: Request) => {
         for (const email of safetyEmails) {
           await transporter.sendMail({
             from: `"${fromName}" <${gmailUser}>`,
-            to: resolveEmail(email),
+            to: email,
             subject: emailContent.subject,
             html: emailContent.body,
           });
@@ -175,12 +183,51 @@ function personSvg(color = 'white', size = 18): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}" fill="${color}" style="vertical-align:middle;display:inline-block;"><path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v2h20v-2c0-3.33-6.67-5-10-5z"/></svg>`;
 }
 
+function shieldSvg(color = '#B71C1C', size = 22): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}" fill="${color}" style="vertical-align:middle;display:inline-block;flex-shrink:0;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>`;
+}
+
+function warningSvg(color = '#B71C1C', size = 16): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}" fill="${color}" style="vertical-align:middle;display:inline-block;flex-shrink:0;margin-right:6px;"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`;
+}
+
 function checkinBadge(): string {
   return `<div style="display:inline-flex;align-items:center;gap:8px;background:#107E3E;color:white;padding:8px 18px;border-radius:24px;font-weight:700;font-size:14px;letter-spacing:.4px;margin-bottom:20px;">${personSvg()} &nbsp;ENTRÉE ENREGISTRÉE</div>`;
 }
 
 function checkoutBadge(): string {
   return `<div style="display:inline-flex;align-items:center;gap:8px;background:#546E7A;color:white;padding:8px 18px;border-radius:24px;font-weight:700;font-size:14px;letter-spacing:.4px;margin-bottom:20px;">${personSvg()} &nbsp;SORTIE ENREGISTRÉE</div>`;
+}
+
+function securityNoticeBlock(): string {
+  return `
+<div style="border:1px solid #FFCDD2;border-radius:6px;overflow:hidden;margin-top:28px;">
+  <div style="background:#B71C1C;padding:12px 18px;display:flex;align-items:center;gap:10px;">
+    ${shieldSvg('white', 20)}
+    <span style="color:white;font-weight:700;font-size:14px;letter-spacing:.3px;">Notification de sécurité — Accueil de visiteur</span>
+  </div>
+  <div style="background:#FFF8F8;padding:16px 18px;">
+    <p style="margin:0 0 10px;font-size:14px;color:#4A0000;line-height:1.6;">
+      Nous vous rappelons qu'en tant que personne d'accueil, vous êtes responsable de la sécurité de votre visiteur durant toute la durée de sa présence dans nos locaux.
+    </p>
+    <p style="margin:0 0 10px;font-size:14px;color:#4A0000;font-weight:600;">En cas de déclenchement d'une alarme, vous êtes tenu(e) de :</p>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="padding:5px 0 5px 4px;vertical-align:top;width:24px;">${warningSvg('#B71C1C', 15)}</td>
+        <td style="padding:5px 0;font-size:14px;color:#4A0000;line-height:1.5;">Accompagner immédiatement votre visiteur vers la sortie la plus proche</td>
+      </tr>
+      <tr>
+        <td style="padding:5px 0 5px 4px;vertical-align:top;width:24px;">${warningSvg('#B71C1C', 15)}</td>
+        <td style="padding:5px 0;font-size:14px;color:#4A0000;line-height:1.5;">Vous diriger ensemble vers le point de rassemblement désigné</td>
+      </tr>
+      <tr>
+        <td style="padding:5px 0 5px 4px;vertical-align:top;width:24px;">${warningSvg('#B71C1C', 15)}</td>
+        <td style="padding:5px 0;font-size:14px;color:#4A0000;line-height:1.5;">Suivre l'ensemble des consignes de sécurité en vigueur</td>
+      </tr>
+    </table>
+    <p style="margin:10px 0 0;font-size:13px;color:#6A0000;font-style:italic;">Nous comptons sur votre vigilance et votre coopération.</p>
+  </div>
+</div>`;
 }
 
 function emailBase(headerColor: string, headerTitle: string, body: string, logoUrl: string): string {
@@ -228,6 +275,60 @@ function emailBase(headerColor: string, headerTitle: string, body: string, logoU
 </html>`;
 }
 
+function buildVisitorWelcomeEmail(payload: NotificationRequest, baseUrl: string): { subject: string; body: string } {
+  const subject = `Bienvenue chez SRP — ${payload.visitor_name}`;
+
+  const infoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="#1140A9" style="vertical-align:middle;display:inline-block;flex-shrink:0;margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`;
+
+  const body = emailBase('#1140A9', 'Bienvenue à bord', `
+    <p>Bonjour <strong>${payload.visitor_name}</strong>,</p>
+    <p>Nous vous souhaitons la bienvenue dans les locaux de <strong>Service Aviation Paris (SRP)</strong>. Votre visite a bien été enregistrée.</p>
+    <div class="info-card">
+      <div class="info-row"><span class="info-label">Visiteur</span><span class="info-value">${payload.visitor_name}</span></div>
+      <div class="info-row"><span class="info-label">Société</span><span class="info-value">${payload.company}</span></div>
+      <div class="info-row"><span class="info-label">Votre hôte</span><span class="info-value">${payload.host_name}</span></div>
+      <div class="info-row"><span class="info-label">Arrivée</span><span class="info-value">${formatDateTime(payload.arrival_time)}</span></div>
+      ${payload.expected_duration ? `<div class="info-row"><span class="info-label">Durée prévue</span><span class="info-value">${formatDuration(payload.expected_duration)}</span></div>` : ''}
+    </div>
+
+    <div style="border:1px solid #FFCDD2;border-radius:6px;overflow:hidden;margin-top:24px;">
+      <div style="background:#B71C1C;padding:12px 18px;display:flex;align-items:center;gap:10px;">
+        ${shieldSvg('white', 20)}
+        <span style="color:white;font-weight:700;font-size:14px;letter-spacing:.3px;">Consignes de sécurité</span>
+      </div>
+      <div style="background:#FFF8F8;padding:16px 18px;">
+        <p style="margin:0 0 10px;font-size:14px;color:#4A0000;line-height:1.6;">
+          Pour votre sécurité et celle de tous, merci de prendre connaissance des consignes en vigueur dans nos locaux.
+        </p>
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="padding:5px 0 5px 4px;vertical-align:top;width:24px;">${infoSvg}</td>
+            <td style="padding:5px 0;font-size:14px;color:#333;line-height:1.5;">Restez accompagné(e) de votre hôte en tout temps dans les zones sécurisées</td>
+          </tr>
+          <tr>
+            <td style="padding:5px 0 5px 4px;vertical-align:top;width:24px;">${infoSvg}</td>
+            <td style="padding:5px 0;font-size:14px;color:#333;line-height:1.5;">En cas d'alarme, suivez les instructions de votre hôte et rejoignez le point de rassemblement</td>
+          </tr>
+          <tr>
+            <td style="padding:5px 0 5px 4px;vertical-align:top;width:24px;">${infoSvg}</td>
+            <td style="padding:5px 0;font-size:14px;color:#333;line-height:1.5;">Ne laissez pas de bagages ou objets sans surveillance</td>
+          </tr>
+          <tr>
+            <td style="padding:5px 0 5px 4px;vertical-align:top;width:24px;">${infoSvg}</td>
+            <td style="padding:5px 0;font-size:14px;color:#333;line-height:1.5;">Présentez votre badge visiteur à tout agent de sécurité qui vous le demande</td>
+          </tr>
+        </table>
+        <p style="margin:12px 0 0;font-size:13px;color:#6A0000;font-style:italic;">
+          Un document de sécurité détaillé vous sera transmis sous peu. Merci de votre coopération.
+        </p>
+      </div>
+    </div>
+    <p style="margin-top:24px;font-size:14px;color:#555;">Nous vous souhaitons une excellente visite. N'hésitez pas à contacter la réception si vous avez besoin d'aide.</p>
+  `, baseUrl);
+
+  return { subject, body };
+}
+
 function buildEmailContent(payload: NotificationRequest, baseUrl: string): { subject: string; body: string } {
   const confirmPresentUrl  = `${baseUrl}/#/confirm-action?token=${payload.action_token}&action=present`;
   const confirmDepartedUrl = `${baseUrl}/#/confirm-action?token=${payload.action_token}&action=departed`;
@@ -247,6 +348,7 @@ function buildEmailContent(payload: NotificationRequest, baseUrl: string): { sub
           ${payload.expected_duration ? `<div class="info-row"><span class="info-label">Durée prévue</span><span class="info-value">${formatDuration(payload.expected_duration)}</span></div>` : ''}
         </div>
         <p>Vous recevrez une notification lorsque la durée prévue de la visite sera écoulée.</p>
+        ${securityNoticeBlock()}
       `, baseUrl);
       return { subject, body };
     }
