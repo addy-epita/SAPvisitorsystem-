@@ -112,12 +112,28 @@ Deno.serve(async (req: Request) => {
 
       if (payload.visitor_email) {
         const welcomeEmail = buildVisitorWelcomeEmail(payload, baseUrl);
-        await transporter.sendMail({
+        const mailOptions: Record<string, unknown> = {
           from: `"${fromName}" <${gmailUser}>`,
           to: payload.visitor_email,
           subject: welcomeEmail.subject,
           html: welcomeEmail.body,
-        });
+        };
+
+        try {
+          const pdfUrl = `${baseUrl}/uploads/ACCEUIL_VISITEUR_VF-_1.pdf`;
+          const pdfResponse = await fetch(pdfUrl);
+          if (pdfResponse.ok) {
+            const pdfBuffer = await pdfResponse.arrayBuffer();
+            mailOptions.attachments = [{
+              filename: 'Consignes_Securite_SAP.pdf',
+              content: Buffer.from(pdfBuffer),
+              contentType: 'application/pdf',
+            }];
+          }
+        } catch (_) {
+        }
+
+        await transporter.sendMail(mailOptions);
       }
     }
 
