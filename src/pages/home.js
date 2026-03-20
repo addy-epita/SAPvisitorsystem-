@@ -21,7 +21,7 @@ export function renderHome() {
         </div>
         <div class="home-banner-overlay"></div>
         <div class="home-banner-content">
-          <div class="home-banner-logo">SAP</div>
+          <img src="/assets/images/logo_sap_def_fevrier.jpg" alt="Service Aviation Paris" class="home-banner-logo">
           <h1 class="home-banner-title">Gestion des Visiteurs</h1>
           <p class="home-banner-sub">Service Aviation Paris</p>
         </div>

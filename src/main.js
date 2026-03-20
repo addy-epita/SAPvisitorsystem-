@@ -16,7 +16,7 @@ function renderLayout() {
   footer.innerHTML = `
     <div class="footer-inner">
       <div class="footer-left">
-        <div class="footer-logo">SAP</div>
+        <img src="/assets/images/logo_sap_def_fevrier.jpg" alt="Service Aviation Paris" class="footer-logo">
         <span class="footer-text">Service Aviation Paris</span>
       </div>
       <div class="footer-right">

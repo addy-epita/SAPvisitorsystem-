@@ -11,7 +11,7 @@ export function renderFlow() {
           Retour
         </a>
         <div class="flow-page-title-block">
-          <div class="flow-page-logo">SAP</div>
+          <img src="/assets/images/logo_sap_def_fevrier.jpg" alt="Service Aviation Paris" class="flow-page-logo">
           <div>
             <h1 class="flow-page-title">Processus d'accueil des visiteurs</h1>
             <p class="flow-page-subtitle">Service Aviation Paris — Aéroport d'Orly</p>

@@ -15,7 +15,7 @@ function renderLoginForm() {
     <div class="admin-login-layout">
       <div class="admin-login-card animate-fade-in">
         <div class="admin-login-header">
-          <div class="admin-logo">SAP</div>
+          <img src="/assets/images/logo_sap_def_fevrier.jpg" alt="Service Aviation Paris" class="admin-logo">
           <h1 class="admin-login-title">${t('adminLogin')}</h1>
         </div>
         <form id="adminLoginForm" class="admin-login-form">

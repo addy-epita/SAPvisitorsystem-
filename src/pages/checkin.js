@@ -26,75 +26,126 @@ export async function renderCheckin() {
     <div class="kiosk-layout">
       <div class="kiosk-content checkin-scroll">
         <div class="checkin-container animate-fade-in">
+
           <div class="checkin-header">
-            <div class="checkin-icon-wrap">
-              <svg xmlns="http://www.w3.org/2000/svg" class="checkin-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-            </div>
+            <img src="/assets/images/logo_sap_def_fevrier.jpg" alt="Service Aviation Paris" class="checkin-brand-logo">
             <h1 class="checkin-title">Enregistrement Visiteur</h1>
-            <p class="checkin-subtitle">Veuillez remplir le formulaire ci-dessous</p>
+            <p class="checkin-subtitle">Bienvenue — veuillez compléter les informations ci-dessous</p>
           </div>
 
           <form id="checkinForm" class="checkin-form">
-            <div class="form-row-2">
-              <div class="form-group">
-                <label for="firstName">Prénom *</label>
-                <input type="text" id="firstName" name="first_name" required minlength="2" placeholder="Prénom" autocomplete="given-name">
+
+            <div class="form-section">
+              <div class="form-section-header">
+                <div class="form-section-icon">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                  </svg>
+                </div>
+                <span class="form-section-title">Identité</span>
               </div>
-              <div class="form-group">
-                <label for="lastName">Nom de famille *</label>
-                <input type="text" id="lastName" name="last_name" required minlength="2" placeholder="Nom" autocomplete="family-name">
+              <div class="form-section-body">
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="firstName">Prénom</label>
+                    <div class="input-wrap">
+                      <input type="text" id="firstName" name="first_name" required minlength="2" placeholder="Votre prénom" autocomplete="given-name">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="lastName">Nom de famille</label>
+                    <div class="input-wrap">
+                      <input type="text" id="lastName" name="last_name" required minlength="2" placeholder="Votre nom" autocomplete="family-name">
+                    </div>
+                  </div>
+                </div>
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="company">Société</label>
+                    <div class="input-wrap">
+                      <input type="text" id="company" name="company" required minlength="2" placeholder="Nom de votre entreprise" autocomplete="organization">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="phone">Téléphone</label>
+                    <div class="input-wrap">
+                      <input type="tel" id="phone" name="phone" required placeholder="+33 6 00 00 00 00" autocomplete="tel">
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="form-row-2">
-              <div class="form-group">
-                <label for="company">Société *</label>
-                <input type="text" id="company" name="company" required minlength="2" placeholder="Société" autocomplete="organization">
+            <div class="form-section">
+              <div class="form-section-header">
+                <div class="form-section-icon">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                  </svg>
+                </div>
+                <span class="form-section-title">Détails de la visite</span>
               </div>
-              <div class="form-group">
-                <label for="phone">Téléphone *</label>
-                <input type="tel" id="phone" name="phone" required placeholder="+33 6 00 00 00 00" autocomplete="tel">
+              <div class="form-section-body">
+                <div class="form-group">
+                  <label for="reason">Motif de la visite</label>
+                  <div class="input-wrap">
+                    <input type="text" id="reason" name="reason" required minlength="3" placeholder="Ex : Réunion, Maintenance, Livraison...">
+                  </div>
+                </div>
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="hostSelect">Hôte SAP</label>
+                    <div class="input-wrap">
+                      <select id="hostSelect" name="host_select">
+                        <option value="">Sélectionnez un hôte...</option>
+                        ${hostList.map(h => `<option value="${h.id}" data-email="${h.email}" data-name="${h.name}">${h.name} (${h.department})</option>`).join('')}
+                        <option value="other">Autre (saisir email)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="duration">Durée prévue</label>
+                    <div class="input-wrap">
+                      <select id="duration" name="expected_duration">
+                        ${durations.map(d => `<option value="${d.value}" ${d.value === 120 ? 'selected' : ''}>${d.label}</option>`).join('')}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="hostEmail">Email de l'hôte</label>
+                  <div class="input-wrap">
+                    <input type="email" id="hostEmail" name="host_email" required placeholder="email@sapformations.com" autocomplete="email">
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="reason">Motif de la visite *</label>
-              <input type="text" id="reason" name="reason" required minlength="3" placeholder="Ex : Réunion, Maintenance, Livraison...">
-            </div>
-
-            <div class="form-row-2">
-              <div class="form-group">
-                <label for="hostSelect">Hôte *</label>
-                <select id="hostSelect" name="host_select">
-                  <option value="">Sélectionnez un hôte...</option>
-                  ${hostList.map(h => `<option value="${h.id}" data-email="${h.email}" data-name="${h.name}">${h.name} (${h.department})</option>`).join('')}
-                  <option value="other">Autre (saisir email)</option>
-                </select>
+            <div class="form-section form-section-optional">
+              <div class="form-section-header">
+                <div class="form-section-icon form-section-icon-muted">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+                <span class="form-section-title">Coordonnées électroniques</span>
+                <span class="form-section-badge">Optionnel</span>
               </div>
-              <div class="form-group">
-                <label for="hostEmail">Email de l'hôte *</label>
-                <input type="email" id="hostEmail" name="host_email" required placeholder="email@sapformations.com" autocomplete="email">
+              <div class="form-section-body">
+                <div class="form-group">
+                  <label for="visitorEmail">Votre adresse email</label>
+                  <div class="input-wrap">
+                    <input type="email" id="visitorEmail" name="visitor_email" placeholder="votre@email.com" autocomplete="email">
+                  </div>
+                  <p class="form-field-hint">Vous recevrez votre badge QR et les consignes de sécurité par email</p>
+                </div>
               </div>
-            </div>
-
-            <div class="form-group">
-              <label for="visitorEmail">Email visiteur (optionnel)</label>
-              <input type="email" id="visitorEmail" name="visitor_email" placeholder="votre@email.com" autocomplete="email">
-            </div>
-
-            <div class="form-group">
-              <label for="duration">Durée prévue *</label>
-              <select id="duration" name="expected_duration">
-                ${durations.map(d => `<option value="${d.value}" ${d.value === 120 ? 'selected' : ''}>${d.label}</option>`).join('')}
-              </select>
             </div>
 
             <div class="form-actions">
               <a href="#/" class="btn-secondary">Annuler</a>
               <button type="submit" class="btn-primary" id="submitBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Confirmer l'arrivée

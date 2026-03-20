@@ -279,7 +279,7 @@ function emailBase(headerColor: string, headerTitle: string, body: string, logoU
 <body>
 <div class="wrap">
   <div class="header">
-    <img src="${logoUrl}/assets/images/logo.png" alt="SAP" style="height:44px;display:block;" />
+    <img src="${logoUrl}/assets/images/logo_sap_def_fevrier.jpg" alt="Service Aviation Paris" style="height:52px;display:block;background:white;padding:6px 10px;border-radius:6px;margin-bottom:12px;" />
     <div class="header-title">${headerTitle}</div>
   </div>
   <div class="content">
@@ -292,7 +292,7 @@ function emailBase(headerColor: string, headerTitle: string, body: string, logoU
 }
 
 function buildVisitorWelcomeEmail(payload: NotificationRequest, baseUrl: string): { subject: string; body: string } {
-  const subject = `Bienvenue chez SRP — ${payload.visitor_name}`;
+  const subject = `Bienvenue chez SAP — ${payload.visitor_name}`;
 
   const infoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="#1140A9" style="vertical-align:middle;display:inline-block;flex-shrink:0;margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`;
 
